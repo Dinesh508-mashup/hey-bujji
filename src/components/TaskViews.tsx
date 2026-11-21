@@ -10,6 +10,8 @@ import { sendVoice } from "../lib/api";
 import { useVoiceRecorder } from "../lib/audio";
 import { voiceConfirms } from "../lib/confirm";
 import { speak } from "../lib/speak";
+import { AlarmModal, stepsSince, useNow, useStepsSince, useStoppedAlarms, walkStart } from "./TaskAlarm";
+import { countdownLabel, msUntil, shouldRing } from "../lib/alarm";
 import { useLang } from "../lib/language";
 import {
   KIND_HI, KIND_LABEL, KIND_ROUTE, KIND_TE, addTask, clock, deleteTask, isValidTime, markDone, syncTaskNotifications, taskStatus, updateTask, useTasks,
@@ -46,6 +48,9 @@ type VoiceState = { id: string; phase: "listening" | "checking" } | null;
 function TaskList({ tasks }: { tasks: Task[] }) {
   const { t: tr, voice } = useLang();
   const rec = useVoiceRecorder(6);
+  const now = useNow(1000);
+  const alarms = useStoppedAlarms();
+  const ringing = tasks.find((t) => shouldRing(t, now, alarms.stoppedToday(t.id))) ?? null;
   const [busy, setBusy] = useState<VoiceState>(null);
   const [heard, setHeard] = useState<Record<string, { text: string; ok: boolean }>>({});
 
@@ -59,7 +64,9 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       setHeard((h) => ({ ...h, [task.id]: { text: said, ok } }));
       if (ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        await markDone(task, said);
+        const start = task.kind === "walk" ? walkStart(task, alarms.stoppedAt(task.id)) : null;
+        const steps = start ? await stepsSince(start) : null;
+        await markDone(task, said, { steps });
         speak(tr({ en: "Thank you. I have told Ravi.", te: "ధన్యవాదాలు. రవికి చెప్పాను.", hi: "धन्यवाद। रवि को बता दिया।" }), voice);
       } else {
         speak(tr({ en: "I didn't hear that it's done. Tap the mic and say: I have done it.", te: "పూర్తయిందని వినిపించలేదు. మైక్ నొక్కి, అయిపోయింది అని చెప్పండి.", hi: "मुझे नहीं सुनाई दिया कि हो गया। माइक दबाइए और कहिए: हो गया।" }), voice);
@@ -83,11 +90,18 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     }
   }
 
-  return <View style={{ gap: 10 }}>{tasks.map((t) => <ParentTask key={t.id} t={t} voice={busy?.id === t.id ? busy.phase : null} heard={heard[t.id]} onSayDone={() => sayDone(t)} />)}</View>;
+  return (
+    <View style={{ gap: 10 }}>
+      <AlarmModal task={ringing} onStop={alarms.stop} onSayDone={(t) => setTimeout(() => sayDone(t), 400)} />
+      {tasks.map((t) => (
+        <ParentTask key={t.id} t={t} now={now} stoppedAt={alarms.stoppedAt(t.id)} voice={busy?.id === t.id ? busy.phase : null} heard={heard[t.id]} onSayDone={() => sayDone(t)} />
+      ))}
+    </View>
+  );
 }
 
-function ParentTask({ t, voice: vstate, heard, onSayDone }: {
-  t: Task; voice: "listening" | "checking" | null; heard?: { text: string; ok: boolean }; onSayDone: () => void;
+function ParentTask({ t, now, stoppedAt, voice: vstate, heard, onSayDone }: {
+  t: Task; now: Date; stoppedAt: string | null; voice: "listening" | "checking" | null; heard?: { text: string; ok: boolean }; onSayDone: () => void;
 }) {
   const { lang, t: tr, voice } = useLang();
   const status = taskStatus(t);
@@ -95,6 +109,9 @@ function ParentTask({ t, voice: vstate, heard, onSayDone }: {
   const route = KIND_ROUTE[t.kind];
   const [icon, tint] = KIND_ICON[t.kind];
   const kindLabel = lang === "en" ? KIND_LABEL[t.kind] : lang === "hi" ? KIND_HI[t.kind] : KIND_TE[t.kind];
+  const ms = msUntil(t, now);
+  const start = t.kind === "walk" ? walkStart(t, stoppedAt) : null;
+  const steps = useStepsSince(start, t.kind === "walk" && !done && !!start && start <= now);
 
   function finish() {
     if (done) return;
@@ -129,6 +146,11 @@ function ParentTask({ t, voice: vstate, heard, onSayDone }: {
           <Text style={[st.title, done ? st.titleDone : null]}>{t.title}</Text>
           {t.note ? <Text style={st.note}>{t.note}</Text> : null}
           {status === "due" ? <Text style={st.due}>{tr({ en: "Time to do it now", te: "ఇప్పుడు చేయండి", hi: "अभी करने का समय" })}</Text> : null}
+          {!done && ms !== null && ms > 0 ? (
+            <View style={st.timer}><Ionicons name="alarm-outline" size={14} color={S.ink} /><Text style={st.timerText}>{tr({ en: "Alarm", te: "అలారం", hi: "अलार्म" })} {countdownLabel(ms)}</Text></View>
+          ) : null}
+          {stoppedAt && !done ? <Text style={st.note}>🔔 {tr({ en: "Alarm stopped", te: "అలారం ఆపారు", hi: "अलार्म रोका" })} {new Date(stoppedAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</Text> : null}
+          {t.kind === "walk" && !done && steps !== null ? <Text style={st.steps}>👣 {steps.toLocaleString("en-IN")} {tr({ en: "steps so far", te: "అడుగులు", hi: "कदम अब तक" })}</Text> : null}
         </View>
         <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={tr({ en: "Mark done", te: "పూర్తయింది", hi: "हो गया" })} hitSlop={10} onPress={finish}
           style={[st.check, done ? st.checkOn : null]}>
@@ -173,6 +195,9 @@ const st = StyleSheet.create({
   micOn: { backgroundColor: C.red, borderColor: "transparent" },
   actText: { fontSize: 16, fontWeight: "700", color: "#fff" },
   heard: { fontSize: 13, marginTop: 8, fontWeight: "600" },
+  timer: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", backgroundColor: "#F3EEFB", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 },
+  timerText: { fontSize: 13, fontWeight: "700", color: S.ink },
+  steps: { fontSize: 15, fontWeight: "700", color: C.green, marginTop: 6 },
   rowDone: { backgroundColor: "#F7FBF8" },
   eyebrow: { fontSize: 13, color: S.muted },
   title: { fontSize: 16, fontWeight: "600", color: S.ink, marginTop: 2 },

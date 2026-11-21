@@ -23,7 +23,7 @@ type Tab = "dashboard" | "tasks" | "activity";
 
 const FEED_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   medicine_taken: "medkit", reminder_set: "alarm", call: "call", red_flag: "warning", scam: "shield-checkmark",
-  task_done: "checkmark-done", breathing: "leaf", chair_stand: "body", memory: "bulb", heart_rate: "heart",
+  task_done: "checkmark-done", breathing: "leaf", chair_stand: "body", memory: "bulb", heart_rate: "heart", alarm_stopped: "alarm",
 };
 
 function ago(iso: string, now: number) {
@@ -504,6 +504,8 @@ function ScheduleCard({ tasks, events, now, parent, error, style, scroll = false
   // How each task was ticked off today: tapped, or confirmed by voice (with what Amma said; no audio kept).
   const todayStr = new Date(now).toDateString();
   const confirmation = (t: Task) => events.find((e) => e.type === "task_done" && e.details?.task_id === t.id && new Date(e.created_at).toDateString() === todayStr);
+  const alarmStop = (t: Task) => events.find((e) => e.type === "alarm_stopped" && e.details?.task_id === t.id && new Date(e.created_at).toDateString() === todayStr);
+  const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
   return (
     <DashCard style={style}>
       <View style={s.cardHead}>
@@ -542,15 +544,23 @@ function ScheduleCard({ tasks, events, now, parent, error, style, scroll = false
                 <Text style={s.taskTime}>{days[sel].toLocaleDateString("en-IN", { day: "numeric", month: "long" })}, {clock(t.time)}</Text>
                 <View style={[s.status, { backgroundColor: st.bg }]}><Text style={s.statusText}>{st.label}</Text></View>
               </View>
+              {isToday && alarmStop(t) ? (
+                <View style={[s.confirm, { backgroundColor: "#F3EEFB" }]}>
+                  <Ionicons name="alarm-outline" size={13} color={D.blue} />
+                  <Text style={[s.confirmText, { color: D.ink }]}>Alarm rang · {parent} stopped it at {hm(alarmStop(t)!.created_at)}{doneToday(t, new Date(now)) ? "" : " · not confirmed yet"}</Text>
+                </View>
+              ) : null}
               {isToday && doneToday(t, new Date(now)) ? (() => {
                 const ev = confirmation(t);
                 const byVoice = ev?.details?.via === "voice";
+                const steps = typeof ev?.details?.steps === "number" ? (ev.details.steps as number) : null;
                 return (
                   <View style={s.confirm}>
                     <Ionicons name={byVoice ? "mic" : "hand-left-outline"} size={13} color={D.green} />
-                    <Text style={s.confirmText} numberOfLines={2}>
+                    <Text style={s.confirmText} numberOfLines={3}>
                       {byVoice ? `Confirmed by voice${typeof ev?.details?.heard === "string" && ev.details.heard ? `: “${ev.details.heard}”` : ""}` : `${parent} ticked it off`}
-                      {` · ${new Date(t.last_done_at!).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}`}
+                      {` · ${hm(t.last_done_at!)}`}
+                      {steps !== null ? ` · 👣 ${steps.toLocaleString("en-IN")} steps` : ""}
                     </Text>
                   </View>
                 );

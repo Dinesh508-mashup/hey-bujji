@@ -103,13 +103,15 @@ export async function deleteTask(id: string) {
   if (error) throw new Error(error.message);
 }
 
-/** Tick a task off. `heard` = what Amma said when she confirmed it by voice (text only; no audio is kept). */
-export async function markDone(t: Task, heard?: string) {
+/** Tick a task off. `heard` = what Amma said when she confirmed by voice (text only; no audio kept). `steps` = phone pedometer count for walks. */
+export async function markDone(t: Task, heard?: string, extra: { steps?: number | null } = {}) {
   const { error } = await supabase.from("tasks").update({ last_done_at: new Date().toISOString() }).eq("id", t.id);
   if (error) throw new Error(error.message);
   const via = heard ? "voice" : "tap";
-  const summary = heard ? `Amma confirmed by voice: ${t.title}` : `Amma did: ${t.title}`;
-  await logEvent("task_done", summary, "normal", { task_id: t.id, kind: t.kind, via, heard: heard ?? null });
+  const steps = typeof extra.steps === "number" ? extra.steps : null;
+  const stepText = steps !== null ? ` (${steps.toLocaleString("en-IN")} steps)` : "";
+  const summary = heard ? `Amma confirmed by voice: ${t.title}${stepText}` : `Amma did: ${t.title}${stepText}`;
+  await logEvent("task_done", summary, "normal", { task_id: t.id, kind: t.kind, via, heard: heard ?? null, steps });
   // Medicines also count on the dashboard's medication list ("Taken today ✓").
   if (t.kind === "medicine") await logEvent("medicine_taken", `Amma took ${t.title}`, "normal", { task_id: t.id, via, heard: heard ?? null });
 }
