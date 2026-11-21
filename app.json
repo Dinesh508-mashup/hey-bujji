@@ -1,13 +1,19 @@
 {
   "expo": {
-    "name": "Bujji-App",
-    "slug": "Bujji-App",
+    "name": "Hey Bujji",
+    "slug": "hey-bujji",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.heybujji.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Hey Bujji listens when you press the mic so it can understand you.",
+        "NSMotionUsageDescription": "Hey Bujji uses motion to count breaths and chair stands.",
+        "NSPhotoLibraryUsageDescription": "Pick a screenshot so Hey Bujji can check it for scams."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +25,22 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Hey Bujji listens when you press the mic so it can understand you."
+        }
+      ],
+      "expo-notifications",
+      "expo-asset",
+      "expo-font"
+    ],
+    "scheme": "heybujji"
   }
 }

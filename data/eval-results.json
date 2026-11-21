@@ -1,0 +1,4 @@
+{
+ "status": "not_run",
+ "note": "No evaluation has been run yet. Record the 40 clips, then run: python3 eval/fetch_clips.py && python3 eval/run_eval.py"
+}

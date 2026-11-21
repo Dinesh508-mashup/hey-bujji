@@ -1,0 +1,202 @@
+[
+ {
+  "id": "s01",
+  "text": "Naa BP tablet teesukunna",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s02",
+  "text": "Amlodipine vesukunna ippude",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s03",
+  "text": "Maine sugar ki goli le li",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s04",
+  "text": "Morning tablets anni ayipoyayi",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s05",
+  "text": "Sugar tablet vesukunna tiffin tarvata",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s06",
+  "text": "Maine BP ki dawai le li hai",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s07",
+  "text": "Metformin ippude vesukunna",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s08",
+  "text": "Subah wali BP ki goli kha li",
+  "intent": "took_medicine"
+ },
+ {
+  "id": "s09",
+  "text": "Raatri 8 ki sugar tablet gurthu cheyyi",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s10",
+  "text": "Saayantram 6 gantalaku BP tablet gurthu cheyyi",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s11",
+  "text": "Shaam 7 baje dawai yaad dilana",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s12",
+  "text": "Udayam 8 gantalaku Amlodipine gurthu cheyyi",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s13",
+  "text": "Raat 9 baje sugar ki goli yaad dilana",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s14",
+  "text": "Raatri enimidi ki Metformin gurthu cheyyi",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s15",
+  "text": "Subah sade aath baje BP ki goli yaad dilana",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s16",
+  "text": "Madhyahnam 2 gantalaku sugar tablet gurthu cheyyi",
+  "intent": "set_reminder"
+ },
+ {
+  "id": "s17",
+  "text": "Abbayiki call cheyyi",
+  "intent": "call_family"
+ },
+ {
+  "id": "s18",
+  "text": "Ammayi ki phone kalupu",
+  "intent": "call_family"
+ },
+ {
+  "id": "s19",
+  "text": "Ravi ko phone lagao",
+  "intent": "call_family"
+ },
+ {
+  "id": "s20",
+  "text": "Babu ki phone cheyyi",
+  "intent": "call_family"
+ },
+ {
+  "id": "s21",
+  "text": "Beti ko call karo",
+  "intent": "call_family"
+ },
+ {
+  "id": "s22",
+  "text": "Ravi ki call cheyyi",
+  "intent": "call_family"
+ },
+ {
+  "id": "s23",
+  "text": "Beta ko phone lagao",
+  "intent": "call_family"
+ },
+ {
+  "id": "s24",
+  "text": "Ammayiki phone cheyyi",
+  "intent": "call_family"
+ },
+ {
+  "id": "s25",
+  "text": "Chest lo noppi ga undi",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s26",
+  "text": "Kallu tiruguthunnayi",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s27",
+  "text": "Usuru aadatledu",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s28",
+  "text": "Seene mein dard hai",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s29",
+  "text": "Mujhe chakkar aa raha hai",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s30",
+  "text": "Saans lene mein taklif ho rahi hai",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s31",
+  "text": "Gunde lo noppi ga undi",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s32",
+  "text": "Tala tiruguthondi",
+  "intent": "red_flag"
+ },
+ {
+  "id": "s33",
+  "text": "Bank nundi call OTP adigaru",
+  "intent": "scam_report"
+ },
+ {
+  "id": "s34",
+  "text": "Police ani cheppi dabbulu adugutunnaru",
+  "intent": "scam_report"
+ },
+ {
+  "id": "s35",
+  "text": "KYC update cheyyamani link pampincharu",
+  "intent": "scam_report"
+ },
+ {
+  "id": "s36",
+  "text": "Bank se call aaya OTP maang rahe hain",
+  "intent": "scam_report"
+ },
+ {
+  "id": "s37",
+  "text": "Lottery vachindi ani dabbulu kattamannaru",
+  "intent": "scam_report"
+ },
+ {
+  "id": "s38",
+  "text": "Account block avutundi ani message vachindi",
+  "intent": "scam_report"
+ },
+ {
+  "id": "s39",
+  "text": "Parcel kosam dabbulu pampamani call vachindi",
+  "intent": "scam_report"
+ },
+ {
+  "id": "s40",
+  "text": "OTP ichesanu dabbulu poyayi",
+  "intent": "scam_report"
+ }
+]

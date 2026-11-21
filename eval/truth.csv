@@ -1,0 +1,41 @@
+sentence_id,transcript,intent,medicine,time,contact,urgency,symptom,money_sent,language
+s01,Naa BP tablet teesukunna,took_medicine,Amlodipine,,,normal,,false,te
+s02,Amlodipine vesukunna ippude,took_medicine,Amlodipine,,,normal,,false,te
+s03,Maine sugar ki goli le li,took_medicine,Metformin,,,normal,,false,hi
+s04,Morning tablets anni ayipoyayi,took_medicine,all,,,normal,,false,te
+s05,Sugar tablet vesukunna tiffin tarvata,took_medicine,Metformin,,,normal,,false,te
+s06,Maine BP ki dawai le li hai,took_medicine,Amlodipine,,,normal,,false,hi
+s07,Metformin ippude vesukunna,took_medicine,Metformin,,,normal,,false,te
+s08,Subah wali BP ki goli kha li,took_medicine,Amlodipine,,,normal,,false,hi
+s09,Raatri 8 ki sugar tablet gurthu cheyyi,set_reminder,Metformin,20:00,,normal,,false,te
+s10,Saayantram 6 gantalaku BP tablet gurthu cheyyi,set_reminder,Amlodipine,18:00,,normal,,false,te
+s11,Shaam 7 baje dawai yaad dilana,set_reminder,,19:00,,normal,,false,hi
+s12,Udayam 8 gantalaku Amlodipine gurthu cheyyi,set_reminder,Amlodipine,08:00,,normal,,false,te
+s13,Raat 9 baje sugar ki goli yaad dilana,set_reminder,Metformin,21:00,,normal,,false,hi
+s14,Raatri enimidi ki Metformin gurthu cheyyi,set_reminder,Metformin,20:00,,normal,,false,te
+s15,Subah sade aath baje BP ki goli yaad dilana,set_reminder,Amlodipine,08:30,,normal,,false,hi
+s16,Madhyahnam 2 gantalaku sugar tablet gurthu cheyyi,set_reminder,Metformin,14:00,,normal,,false,te
+s17,Abbayiki call cheyyi,call_family,,,Ravi,normal,,false,te
+s18,Ammayi ki phone kalupu,call_family,,,Priya,normal,,false,te
+s19,Ravi ko phone lagao,call_family,,,Ravi,normal,,false,hi
+s20,Babu ki phone cheyyi,call_family,,,Ravi,normal,,false,te
+s21,Beti ko call karo,call_family,,,Priya,normal,,false,hi
+s22,Ravi ki call cheyyi,call_family,,,Ravi,normal,,false,te
+s23,Beta ko phone lagao,call_family,,,Ravi,normal,,false,hi
+s24,Ammayiki phone cheyyi,call_family,,,Priya,normal,,false,te
+s25,Chest lo noppi ga undi,red_flag,,,,urgent,chest_pain,false,te
+s26,Kallu tiruguthunnayi,red_flag,,,,urgent,dizziness,false,te
+s27,Usuru aadatledu,red_flag,,,,urgent,breathlessness,false,te
+s28,Seene mein dard hai,red_flag,,,,urgent,chest_pain,false,hi
+s29,Mujhe chakkar aa raha hai,red_flag,,,,urgent,dizziness,false,hi
+s30,Saans lene mein taklif ho rahi hai,red_flag,,,,urgent,breathlessness,false,hi
+s31,Gunde lo noppi ga undi,red_flag,,,,urgent,chest_pain,false,te
+s32,Tala tiruguthondi,red_flag,,,,urgent,dizziness,false,te
+s33,Bank nundi call OTP adigaru,scam_report,,,,high,,false,te
+s34,Police ani cheppi dabbulu adugutunnaru,scam_report,,,,high,,false,te
+s35,KYC update cheyyamani link pampincharu,scam_report,,,,high,,false,te
+s36,Bank se call aaya OTP maang rahe hain,scam_report,,,,high,,false,hi
+s37,Lottery vachindi ani dabbulu kattamannaru,scam_report,,,,high,,false,te
+s38,Account block avutundi ani message vachindi,scam_report,,,,high,,false,te
+s39,Parcel kosam dabbulu pampamani call vachindi,scam_report,,,,high,,false,te
+s40,OTP ichesanu dabbulu poyayi,scam_report,,,,high,,true,te

@@ -1,0 +1,13 @@
+# Minimal Supabase CLI config for Hey Bujji.
+project_id = "hey-bujji"
+
+# Demo build: no sign-in, so the functions accept the public anon/publishable key.
+# Lock these down (verify_jwt = true + auth) before anything beyond the hackathon.
+[functions.bujji]
+verify_jwt = false
+
+[functions.check-message]
+verify_jwt = false
+
+[functions.tts]
+verify_jwt = false
