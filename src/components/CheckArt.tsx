@@ -57,7 +57,7 @@ export function CheckTile({ art, label, sub, onPress }: { art: CheckArtKey; labe
 }
 
 const st = StyleSheet.create({
-  tile: { flex: 1, minWidth: "30%", backgroundColor: "#fff", borderRadius: 22, padding: 10, alignItems: "center", ...softShadow, shadowOpacity: 0.06 },
+  tile: { flex: 1, minWidth: "45%", backgroundColor: "#fff", borderRadius: 22, padding: 10, alignItems: "center", ...softShadow, shadowOpacity: 0.06 },
   art: { width: "100%", borderRadius: 16, alignItems: "center", justifyContent: "center", paddingVertical: 10 },
   label: { fontSize: 14, fontWeight: "700", color: S.ink, marginTop: 8 },
   sub: { fontSize: 11, color: S.muted, marginTop: 1 },

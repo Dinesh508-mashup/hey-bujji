@@ -1,13 +1,16 @@
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+// Amma's home: just two things. Talk to Bujji, and what Ravi asked her to do today.
+// Everything else (health checks, scam check, results) is on the bottom bar.
+import { useEffect, useState } from "react";
+import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Redirect, router } from "expo-router";
-import { FromFamily } from "../components/TaskViews";
-import { CheckTile } from "../components/CheckArt";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FromFamily } from "../components/TaskViews";
 import { useLang, type Tr } from "../lib/language";
 import { Disclaimer, SetupBanner } from "../components/ui";
-import { FloatingTabBar, GlassButton, Hero, Orb, PetalBackdrop, S, SectionHeader, SoftCard, softShadow } from "../components/soft";
+import { FloatingTabBar, GlassButton, PetalBackdrop, S, softShadow } from "../components/soft";
 
 function greeting(): Tr {
   const h = new Date().getHours();
@@ -16,59 +19,71 @@ function greeting(): Tr {
   return { en: "Good evening", te: "శుభ సాయంత్రం", hi: "शुभ संध्या" };
 }
 
+/** Big mic with two soft rings breathing out of it. */
+function MicOrb() {
+  const [v] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(v, { toValue: 1, duration: 2200, easing: Easing.out(Easing.quad), useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [v]);
+  const ring = (delay: number) => ({
+    transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1 + delay, 1.7 + delay] }) }],
+    opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
+  });
+  return (
+    <View style={s.orbWrap}>
+      <Animated.View style={[s.ring, ring(0)]} />
+      <Animated.View style={[s.ring, ring(0.25)]} />
+      <LinearGradient colors={["#F7A35C", "#E5767A"]} style={s.orb}>
+        <Ionicons name="mic" size={46} color="#fff" />
+      </LinearGradient>
+    </View>
+  );
+}
+
 export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useLang();
   // The web build is the family dashboard; the phone is Amma's app.
   if (Platform.OS === "web") return <Redirect href="/family" />;
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+
   return (
     <View style={s.page}>
       <PetalBackdrop colors={S.bloom} />
-      <ScrollView contentContainerStyle={[s.scroll, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 110 }]}>
+      <ScrollView contentContainerStyle={[s.scroll, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 120 }]}>
         <View style={s.inner}>
           <View style={s.topBar}>
-            <View style={s.avatar}><Text style={{ fontSize: 22 }}>👵🏽</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={s.avatar}><Text style={{ fontSize: 22 }}>👵🏽</Text></View>
+              <View>
+                <Text style={s.hello}>{t(greeting())}, Amma</Text>
+                <Text style={s.date}>{today}</Text>
+              </View>
+            </View>
             <GlassButton icon="settings-sharp" label={t({ en: "Settings", te: "సెట్టింగ్‌లు", hi: "सेटिंग्स" })} onPress={() => router.push("/settings")} />
           </View>
-
-          <Hero icon="heart" eyebrow={t({ en: "Enjoy your day today", te: "ఈ రోజు ఆనందంగా గడపండి", hi: "आज का दिन अच्छा बिताइए" })} title={t(greeting())} />
           <SetupBanner />
 
-          <SectionHeader title={t({ en: "Your Assistant", te: "మీ సహాయకుడు", hi: "आपका सहायक" })} action={t({ en: "Open", te: "తెరవండి", hi: "खोलें" })} onAction={() => router.push("/parent")} />
-          <SoftCard style={s.task} onPress={() => router.push("/parent")} label={t({ en: "Talk to Hey Bujji", te: "హే బుజ్జితో మాట్లాడండి", hi: "हे बुज्जी से बात करें" })}>
-            <Orb icon="mic" tint={S.peach} size={44} />
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={s.taskEyebrow}>Hey Bujji</Text>
-              <Text style={s.taskTitle}>{t({ en: "Tap and speak", te: "నొక్కి మాట్లాడండి", hi: "दबाइए और बोलिए" })}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={S.ink} />
-          </SoftCard>
+          {/* Talk to Bujji */}
+          <Pressable
+            accessibilityRole="button" accessibilityLabel={t({ en: "Talk to Hey Bujji", te: "హే బుజ్జితో మాట్లాడండి", hi: "हे बुज्जी से बात करें" })}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); router.push("/parent"); }}
+            style={({ pressed }) => [s.talkCard, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+          >
+            <LinearGradient colors={["#FFF4EA", "#FFFFFF"]} style={StyleSheet.absoluteFill} />
+            <MicOrb />
+            <Text style={s.talkTitle}>{t({ en: "Tap and talk to Bujji", te: "నొక్కి బుజ్జితో మాట్లాడండి", hi: "दबाइए और बुज्जी से बात कीजिए" })}</Text>
+            <Text style={s.talkSub}>{t({ en: "“I took my BP tablet” · “Call my son”", te: "“BP మాత్ర వేసుకున్నా” · “అబ్బాయికి కాల్ చెయ్యి”", hi: "“BP की गोली ले ली” · “बेटे को फ़ोन करो”" })}</Text>
+          </Pressable>
 
-          <SectionHeader title={t({ en: "From Ravi", te: "రవి నుండి", hi: "रवि की ओर से" })} />
+          {/* From Ravi */}
+          <View style={s.section}>
+            <View style={s.sectionIcon}><Ionicons name="heart" size={16} color="#E5767A" /></View>
+            <Text style={s.sectionTitle}>{t({ en: "Today from Ravi", te: "ఈ రోజు రవి నుండి", hi: "आज रवि की ओर से" })}</Text>
+          </View>
           <FromFamily />
-
-          <SectionHeader title={t({ en: "Check today", te: "ఈ రోజు పరీక్షలు", hi: "आज की जाँच" })} action={t({ en: "Show more", te: "మరిన్ని", hi: "और देखें" })} onAction={() => router.push("/checkin")} />
-          <View style={s.checkGrid}>
-            <CheckTile art="breathing" label={t({ en: "Breathing", te: "ఊపిరి", hi: "साँस" })} sub={t({ en: "60 s · phone on chest", te: "60 సె · ఛాతీ మీద", hi: "60 से · छाती पर" })} onPress={() => router.push("/breathing")} />
-            <CheckTile art="heart" label={t({ en: "Heart rate", te: "గుండె వేగం", hi: "धड़कन" })} sub={t({ en: "20 s · left of chest", te: "20 సె · ఎడమ వైపు", hi: "20 से · बाईं ओर" })} onPress={() => router.push("/heart")} />
-            <CheckTile art="chair_stand" label={t({ en: "Chair stand", te: "కుర్చీ వ్యాయామం", hi: "कुर्सी व्यायाम" })} sub={t({ en: "30 s · stand & sit", te: "30 సె · లేచి కూర్చోండి", hi: "30 से · उठिए-बैठिए" })} onPress={() => router.push("/chairstand")} />
-            <CheckTile art="memory" label={t({ en: "Memory", te: "జ్ఞాపకశక్తి", hi: "याददाश्त" })} sub={t({ en: "3 words", te: "3 పదాలు", hi: "3 शब्द" })} onPress={() => router.push("/memory")} />
-            <CheckTile art="scam" label={t({ en: "Scam check", te: "మోసం తనిఖీ", hi: "धोखा जाँच" })} sub={t({ en: "Message or screenshot", te: "మెసేజ్ / స్క్రీన్‌షాట్", hi: "मैसेज / स्क्रीनशॉट" })} onPress={() => router.push("/check")} />
-          </View>
-
-          <SectionHeader title={t({ en: "For You", te: "మీ కోసం", hi: "आपके लिए" })} />
-          <View style={s.forYou}>
-            <SoftCard style={s.tile} onPress={() => router.push("/checkin")} label={t({ en: "Today's check-in", te: "ఈ రోజు చెక్-ఇన్", hi: "आज का चेक-इन" })}>
-              <LinearGradient colors={["#FBD9B8", "#F8E6DA", "#FFF4EC"]} style={StyleSheet.absoluteFill} />
-              <Text style={s.tileEyebrow}>{t({ en: "Daily health", te: "రోజువారీ ఆరోగ్యం", hi: "रोज़ का स्वास्थ्य" })}</Text>
-              <Text style={s.tileTitle}>{t({ en: "Today's check-in", te: "ఈ రోజు చెక్-ఇన్", hi: "आज का चेक-इन" })}</Text>
-            </SoftCard>
-            <SoftCard style={s.tile} onPress={() => router.push("/results")} label="Accuracy results">
-              <LinearGradient colors={["#BFE2F7", "#D7EEF2", "#F1F8F2"]} style={StyleSheet.absoluteFill} />
-              <Text style={s.tileEyebrow}>Whisper vs Bujji</Text>
-              <Text style={s.tileTitle}>Accuracy results</Text>
-            </SoftCard>
-          </View>
 
           <Disclaimer />
         </View>
@@ -82,19 +97,20 @@ const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: S.page },
   scroll: { flexGrow: 1, alignItems: "center" },
   inner: { width: "100%", maxWidth: 520, paddingHorizontal: 18 },
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   avatar: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFD9A8", alignItems: "center", justifyContent: "center",
+    width: 48, height: 48, borderRadius: 24, backgroundColor: "#FFD9A8", alignItems: "center", justifyContent: "center",
     borderWidth: 2, borderColor: "#fff", ...softShadow,
   },
-  task: { flexDirection: "row", alignItems: "center" },
-  taskEyebrow: { fontSize: 13, color: S.muted },
-  taskTitle: { fontSize: 15, fontWeight: "600", color: S.ink, marginTop: 2 },
-  logBox: { backgroundColor: "#FAFAFC", borderRadius: 22, padding: 10, gap: 10, borderWidth: 1, borderColor: "#F0F0F4" },
-  chipRow: { flexDirection: "row", gap: 10 },
-  checkGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  forYou: { flexDirection: "row", gap: 12 },
-  tile: { flex: 1, height: 150, overflow: "hidden", justifyContent: "flex-end", padding: 14 },
-  tileEyebrow: { fontSize: 12, color: "#6A6A70" },
-  tileTitle: { fontSize: 15, fontWeight: "700", color: S.ink, marginTop: 2 },
+  hello: { fontSize: 20, fontWeight: "700", color: S.ink },
+  date: { fontSize: 13, color: S.muted, marginTop: 1 },
+  talkCard: { borderRadius: 30, overflow: "hidden", alignItems: "center", paddingTop: 30, paddingBottom: 24, paddingHorizontal: 20, ...softShadow },
+  orbWrap: { width: 150, height: 150, alignItems: "center", justifyContent: "center" },
+  ring: { position: "absolute", width: 104, height: 104, borderRadius: 52, backgroundColor: "#F7A35C" },
+  orb: { width: 104, height: 104, borderRadius: 52, alignItems: "center", justifyContent: "center", borderWidth: 4, borderColor: "#fff" },
+  talkTitle: { fontSize: 22, fontWeight: "800", color: S.ink, marginTop: 6, textAlign: "center" },
+  talkSub: { fontSize: 14, color: S.muted, marginTop: 6, textAlign: "center" },
+  section: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 26, marginBottom: 12 },
+  sectionIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#FFE8EA", alignItems: "center", justifyContent: "center" },
+  sectionTitle: { fontSize: 19, fontWeight: "800", color: S.ink },
 });

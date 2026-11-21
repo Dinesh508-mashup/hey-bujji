@@ -10,8 +10,8 @@ import { sendVoice } from "../lib/api";
 import { useVoiceRecorder } from "../lib/audio";
 import { voiceConfirms } from "../lib/confirm";
 import { speak } from "../lib/speak";
-import { AlarmModal, stepsSince, useNow, useStepsSince, useStoppedAlarms, walkStart } from "./TaskAlarm";
-import { countdownLabel, msUntil, shouldRing } from "../lib/alarm";
+import { AlarmModal, stepsSince, useNow, useStepsSince, useStoppedAlarms, useTaskStarts, walkStart } from "./TaskAlarm";
+import { countdownLabel, doneToday, msUntil, shouldRing } from "../lib/alarm";
 import { useLang } from "../lib/language";
 import {
   KIND_HI, KIND_LABEL, KIND_ROUTE, KIND_TE, addTask, clock, deleteTask, isValidTime, markDone, syncTaskNotifications, taskStatus, updateTask, useTasks,
@@ -28,7 +28,7 @@ export const KIND_ICON: Record<TaskKind, [IconName, readonly [string, string]]> 
   custom: ["sparkles", S.lilac],
 };
 
-/** Parent home: today's tasks from the family, live, with one-tap "done". */
+/** Parent home: today's open tasks from the family, live. Finished ones leave the list. */
 export function FromFamily() {
   const { tasks, error, loading } = useTasks();
   const { t } = useLang();
@@ -43,6 +43,7 @@ export function FromFamily() {
 }
 
 type VoiceState = { id: string; phase: "listening" | "checking" } | null;
+const NEEDS_START: TaskKind[] = ["walk", "call", "custom"]; // started by Amma, then closed by voice
 
 /** One shared recorder for all task rows: "Say it's done" records up to 6 s, then Bujji checks what was said. */
 function TaskList({ tasks }: { tasks: Task[] }) {
@@ -50,9 +51,13 @@ function TaskList({ tasks }: { tasks: Task[] }) {
   const rec = useVoiceRecorder(6);
   const now = useNow(1000);
   const alarms = useStoppedAlarms();
-  const ringing = tasks.find((t) => shouldRing(t, now, alarms.stoppedToday(t.id))) ?? null;
+  const starts = useTaskStarts();
+  const open = tasks.filter((t) => !doneToday(t, now));
+  const doneCount = tasks.length - open.length;
+  const ringing = open.find((t) => shouldRing(t, now, alarms.stoppedToday(t.id))) ?? null;
   const [busy, setBusy] = useState<VoiceState>(null);
-  const [heard, setHeard] = useState<Record<string, { text: string; ok: boolean }>>({});
+  const [heard, setHeard] = useState<Record<string, string>>({});
+  const [justDone, setJustDone] = useState<{ title: string; said: string; steps: number | null } | null>(null);
 
   async function check(task: Task, uri: string | null) {
     if (!uri) { setBusy(null); return; }
@@ -60,19 +65,20 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     try {
       const r = await sendVoice(uri, { dryRun: true });
       const said = (r.transcript || "").trim();
-      const ok = voiceConfirms({ kind: task.kind, transcript: said, intent: r.intent?.intent });
-      setHeard((h) => ({ ...h, [task.id]: { text: said, ok } }));
-      if (ok) {
+      if (voiceConfirms({ kind: task.kind, transcript: said, intent: r.intent?.intent })) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        const start = task.kind === "walk" ? walkStart(task, alarms.stoppedAt(task.id)) : null;
+        const start = task.kind === "walk" ? walkStart(task, starts.startedAt(task.id)) : null;
         const steps = start ? await stepsSince(start) : null;
         await markDone(task, said, { steps });
+        setJustDone({ title: task.title, said, steps });
+        setHeard((h) => { const n = { ...h }; delete n[task.id]; return n; });
         speak(tr({ en: "Thank you. I have told Ravi.", te: "ధన్యవాదాలు. రవికి చెప్పాను.", hi: "धन्यवाद। रवि को बता दिया।" }), voice);
       } else {
+        setHeard((h) => ({ ...h, [task.id]: said }));
         speak(tr({ en: "I didn't hear that it's done. Tap the mic and say: I have done it.", te: "పూర్తయిందని వినిపించలేదు. మైక్ నొక్కి, అయిపోయింది అని చెప్పండి.", hi: "मुझे नहीं सुनाई दिया कि हो गया। माइक दबाइए और कहिए: हो गया।" }), voice);
       }
     } catch (e) {
-      setHeard((h) => ({ ...h, [task.id]: { text: e instanceof Error ? e.message : String(e), ok: false } }));
+      setHeard((h) => ({ ...h, [task.id]: e instanceof Error ? e.message : String(e) }));
     } finally {
       setBusy(null);
     }
@@ -86,108 +92,158 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       await rec.start((uri) => check(task, uri));
     } catch (e) {
       setBusy(null);
-      setHeard((h) => ({ ...h, [task.id]: { text: e instanceof Error ? e.message : String(e), ok: false } }));
+      setHeard((h) => ({ ...h, [task.id]: e instanceof Error ? e.message : String(e) }));
     }
   }
 
+  function startTask(task: Task) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const route = KIND_ROUTE[task.kind];
+    if (route) { router.push(route); return; } // breathing / chair stand / memory: the check itself finishes the task
+    starts.start(task);
+    speak(task.kind === "walk"
+      ? tr({ en: "Walk started. I am counting your steps. When you finish, tap the mic and say: done.", te: "నడక మొదలైంది. అడుగులు లెక్కపెడుతున్నాను. అయిపోయాక మైక్ నొక్కి, అయిపోయింది అనండి.", hi: "सैर शुरू। मैं कदम गिन रही हूँ। हो जाने पर माइक दबाइए और कहिए: हो गया।" })
+      : tr({ en: "Started. When you finish, tap the mic and say: done.", te: "మొదలైంది. అయిపోయాక మైక్ నొక్కి, అయిపోయింది అనండి.", hi: "शुरू हो गया। हो जाने पर माइक दबाइए और कहिए: हो गया।" }), voice);
+  }
+
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 12 }}>
       <AlarmModal task={ringing} onStop={alarms.stop} onSayDone={(t) => setTimeout(() => sayDone(t), 400)} />
-      {tasks.map((t) => (
-        <ParentTask key={t.id} t={t} now={now} stoppedAt={alarms.stoppedAt(t.id)} voice={busy?.id === t.id ? busy.phase : null} heard={heard[t.id]} onSayDone={() => sayDone(t)} />
+      <View style={st.progressRow}>
+        <View style={st.progressTrack}><View style={[st.progressFill, { width: `${tasks.length ? (doneCount / tasks.length) * 100 : 0}%` }]} /></View>
+        <Text style={st.progressText}>{doneCount}/{tasks.length} {tr({ en: "done", te: "అయ్యాయి", hi: "हो गए" })}</Text>
+      </View>
+      {justDone ? (
+        <Pressable onPress={() => setJustDone(null)} style={st.doneBanner}>
+          <Ionicons name="checkmark-circle" size={22} color={C.green} />
+          <Text style={st.doneText} numberOfLines={2}>
+            {justDone.title} · {tr({ en: "told Ravi", te: "రవికి చెప్పాను", hi: "रवि को बताया" })}{justDone.steps !== null ? ` · 👣 ${justDone.steps.toLocaleString("en-IN")}` : ""}
+          </Text>
+        </Pressable>
+      ) : null}
+      {open.length === 0 ? (
+        <View style={st.allDone}>
+          <Text style={{ fontSize: 34 }}>🎉</Text>
+          <Text style={st.allDoneText}>{tr({ en: "All done for today. Ravi can see it.", te: "ఈ రోజు అన్నీ అయిపోయాయి. రవి చూడగలరు.", hi: "आज के सब काम हो गए। रवि देख सकते हैं।" })}</Text>
+        </View>
+      ) : null}
+      {open.map((t) => (
+        <ParentTask key={t.id} t={t} now={now} startedAt={starts.startedAt(t.id)} stoppedAt={alarms.stoppedAt(t.id)}
+          voice={busy?.id === t.id ? busy.phase : null} heard={heard[t.id]} onSayDone={() => sayDone(t)} onStart={() => startTask(t)} />
       ))}
     </View>
   );
 }
 
-function ParentTask({ t, now, stoppedAt, voice: vstate, heard, onSayDone }: {
-  t: Task; now: Date; stoppedAt: string | null; voice: "listening" | "checking" | null; heard?: { text: string; ok: boolean }; onSayDone: () => void;
+function ParentTask({ t, now, startedAt, stoppedAt, voice: vstate, heard, onSayDone, onStart }: {
+  t: Task; now: Date; startedAt: string | null; stoppedAt: string | null; voice: "listening" | "checking" | null;
+  heard?: string; onSayDone: () => void; onStart: () => void;
 }) {
   const { lang, t: tr, voice } = useLang();
   const status = taskStatus(t);
-  const done = status === "done";
-  const route = KIND_ROUTE[t.kind];
   const [icon, tint] = KIND_ICON[t.kind];
   const kindLabel = lang === "en" ? KIND_LABEL[t.kind] : lang === "hi" ? KIND_HI[t.kind] : KIND_TE[t.kind];
   const ms = msUntil(t, now);
-  const start = t.kind === "walk" ? walkStart(t, stoppedAt) : null;
-  const steps = useStepsSince(start, t.kind === "walk" && !done && !!start && start <= now);
-
-  function finish() {
-    if (done) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    markDone(t).catch((e) => console.warn(e));
-  }
+  const needsStart = NEEDS_START.includes(t.kind) || !!KIND_ROUTE[t.kind];
+  const started = !!startedAt;
+  const walkFrom = t.kind === "walk" && startedAt ? new Date(startedAt) : null;
+  const steps = useStepsSince(walkFrom, !!walkFrom);
+  const mins = startedAt ? Math.max(0, Math.floor((now.getTime() - new Date(startedAt).getTime()) / 60000)) : 0;
+  const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
 
   function listen() {
     Haptics.selectionAsync().catch(() => {});
     const when = t.time ? clock(t.time) : tr({ en: "any time today", te: "ఈ రోజు ఎప్పుడైనా", hi: "आज कभी भी" });
-    const text = done
-      ? tr({ en: `${t.title}. Already done today. Well done.`, te: `${t.title}. ఈ రోజు అయిపోయింది. బాగుంది.`, hi: `${t.title}। आज हो गया। बहुत अच्छा।` })
-      : tr({
-        en: `Ravi asked you: ${t.title}, at ${when}.${t.note ? ` ${t.note}.` : ""} When you have done it, tap the mic and say: I have done it.`,
-        te: `రవి చెప్పారు: ${t.title}, ${when} కి.${t.note ? ` ${t.note}.` : ""} అయిపోయాక, మైక్ నొక్కి అయిపోయింది అని చెప్పండి.`,
-        hi: `रवि ने कहा: ${t.title}, ${when} बजे।${t.note ? ` ${t.note}।` : ""} हो जाने पर माइक दबाइए और कहिए: हो गया।`,
-      });
-    speak(text, voice);
+    speak(tr({
+      en: `Ravi asked you: ${t.title}, at ${when}.${t.note ? ` ${t.note}.` : ""} ${needsStart && !started ? "Tap start to begin." : "When you have done it, tap the mic and say: I have done it."}`,
+      te: `రవి చెప్పారు: ${t.title}, ${when} కి.${t.note ? ` ${t.note}.` : ""} ${needsStart && !started ? "మొదలుపెట్టడానికి స్టార్ట్ నొక్కండి." : "అయిపోయాక, మైక్ నొక్కి అయిపోయింది అని చెప్పండి."}`,
+      hi: `रवि ने कहा: ${t.title}, ${when} बजे।${t.note ? ` ${t.note}।` : ""} ${needsStart && !started ? "शुरू करने के लिए स्टार्ट दबाइए।" : "हो जाने पर माइक दबाइए और कहिए: हो गया।"}`,
+    }), voice);
   }
 
+  const showStart = needsStart && !started;
   return (
-    <View style={[st.row, done ? st.rowDone : null]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${t.title}, ${clock(t.time)}, ${done ? "done" : "not done"}`}
-        onPress={() => (route && !done ? router.push(route) : listen())}
-        style={{ flexDirection: "row", alignItems: "center" }}
-      >
-        <Orb icon={icon} tint={tint} size={44} />
+    <View style={[st.row, status === "due" && !started ? st.rowDue : null, started ? st.rowLive : null]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${t.title}, ${clock(t.time)}`} onPress={listen} style={{ flexDirection: "row", alignItems: "center" }}>
+        <Orb icon={icon} tint={tint} size={48} />
         <View style={{ flex: 1, marginLeft: 14 }}>
           <Text style={st.eyebrow}>{t.time ? clock(t.time) : tr({ en: "Any time", te: "ఎప్పుడైనా", hi: "कभी भी" })} · {kindLabel}</Text>
-          <Text style={[st.title, done ? st.titleDone : null]}>{t.title}</Text>
+          <Text style={st.title}>{t.title}</Text>
           {t.note ? <Text style={st.note}>{t.note}</Text> : null}
-          {status === "due" ? <Text style={st.due}>{tr({ en: "Time to do it now", te: "ఇప్పుడు చేయండి", hi: "अभी करने का समय" })}</Text> : null}
-          {!done && ms !== null && ms > 0 ? (
-            <View style={st.timer}><Ionicons name="alarm-outline" size={14} color={S.ink} /><Text style={st.timerText}>{tr({ en: "Alarm", te: "అలారం", hi: "अलार्म" })} {countdownLabel(ms)}</Text></View>
-          ) : null}
-          {stoppedAt && !done ? <Text style={st.note}>🔔 {tr({ en: "Alarm stopped", te: "అలారం ఆపారు", hi: "अलार्म रोका" })} {new Date(stoppedAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</Text> : null}
-          {t.kind === "walk" && !done && steps !== null ? <Text style={st.steps}>👣 {steps.toLocaleString("en-IN")} {tr({ en: "steps so far", te: "అడుగులు", hi: "कदम अब तक" })}</Text> : null}
         </View>
-        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={tr({ en: "Mark done", te: "పూర్తయింది", hi: "हो गया" })} hitSlop={10} onPress={finish}
-          style={[st.check, done ? st.checkOn : null]}>
-          <Ionicons name="checkmark" size={18} color={done ? "#fff" : S.ink} />
-        </Pressable>
       </Pressable>
+
+      <View style={st.metaRow}>
+        {started ? (
+          <View style={[st.pill, { backgroundColor: "#E7F5EC" }]}><View style={st.liveDot} /><Text style={[st.pillText, { color: "#2E7A50" }]}>{tr({ en: "In progress", te: "జరుగుతోంది", hi: "चल रहा है" })} · {mins} min</Text></View>
+        ) : status === "due" ? (
+          <View style={[st.pill, { backgroundColor: "#FFF1E3" }]}><Ionicons name="alarm" size={14} color={C.marigold} /><Text style={[st.pillText, { color: C.marigold }]}>{tr({ en: "Time to do it now", te: "ఇప్పుడు చేయండి", hi: "अभी करने का समय" })}</Text></View>
+        ) : ms !== null && ms > 0 ? (
+          <View style={st.pill}><Ionicons name="alarm-outline" size={14} color={S.ink} /><Text style={st.pillText}>{tr({ en: "Alarm", te: "అలారం", hi: "अलार्म" })} {countdownLabel(ms)}</Text></View>
+        ) : null}
+        {stoppedAt ? <View style={st.pill}><Text style={st.pillText}>🔔 {tr({ en: "stopped", te: "ఆపారు", hi: "रोका" })} {hm(stoppedAt)}</Text></View> : null}
+      </View>
+
+      {t.kind === "walk" && started ? (
+        <View style={st.stepsBox}>
+          <Text style={st.stepsNum}>{steps === null ? "—" : steps.toLocaleString("en-IN")}</Text>
+          <Text style={st.stepsLabel}>👣 {tr({ en: "steps since", te: "అడుగులు, మొదలు", hi: "कदम, शुरू" })} {hm(startedAt!)}</Text>
+        </View>
+      ) : null}
 
       <View style={st.actions}>
         <Pressable onPress={listen} accessibilityRole="button" accessibilityLabel={tr({ en: "Listen to this task", te: "ఈ పని వినండి", hi: "यह काम सुनिए" })}
-          style={({ pressed }) => [st.actBtn, st.listenBtn, pressed && { opacity: 0.8 }]}>
-          <Ionicons name="volume-high" size={22} color="#fff" />
-          <Text style={st.actText}>{tr({ en: "Listen", te: "వినండి", hi: "सुनिए" })}</Text>
+          style={({ pressed }) => [st.iconBtn, pressed && { opacity: 0.8 }]}>
+          <Ionicons name="volume-high" size={24} color={S.ink} />
         </Pressable>
-        {!done ? (
+        {showStart ? (
+          <Pressable onPress={onStart} accessibilityRole="button" accessibilityLabel={tr({ en: "Start", te: "మొదలుపెట్టండి", hi: "शुरू करें" })}
+            style={({ pressed }) => [st.actBtn, st.startBtn, pressed && { opacity: 0.85 }]}>
+            <Ionicons name={t.kind === "walk" ? "walk" : "play"} size={22} color="#fff" />
+            <Text style={st.actText}>{t.kind === "walk" ? tr({ en: "Start walk", te: "నడక మొదలు", hi: "सैर शुरू" }) : tr({ en: "Start", te: "మొదలుపెట్టండి", hi: "शुरू करें" })}</Text>
+          </Pressable>
+        ) : (
           <Pressable onPress={onSayDone} disabled={vstate === "checking"} accessibilityRole="button"
             accessibilityLabel={tr({ en: "Say it's done", te: "అయిపోయింది అని చెప్పండి", hi: "बोलिए हो गया" })}
-            style={({ pressed }) => [st.actBtn, st.micBtn, vstate === "listening" && st.micOn, pressed && { opacity: 0.8 }]}>
-            {vstate === "checking" ? <ActivityIndicator color={S.ink} /> : <Ionicons name={vstate === "listening" ? "stop" : "mic"} size={22} color={vstate === "listening" ? "#fff" : S.ink} />}
-            <Text style={[st.actText, { color: vstate === "listening" ? "#fff" : S.ink }]}>
+            style={({ pressed }) => [st.actBtn, st.listenBtn, vstate === "listening" && st.micOn, pressed && { opacity: 0.85 }]}>
+            {vstate === "checking" ? <ActivityIndicator color="#fff" /> : <Ionicons name={vstate === "listening" ? "stop" : "mic"} size={22} color="#fff" />}
+            <Text style={st.actText}>
               {vstate === "listening" ? tr({ en: "Listening… tap to stop", te: "వింటున్నాను… ఆపడానికి నొక్కండి", hi: "सुन रही हूँ… रोकने को दबाइए" })
                 : vstate === "checking" ? tr({ en: "Checking…", te: "చూస్తున్నాను…", hi: "देख रही हूँ…" })
+                : started ? tr({ en: "Say “done” to finish", te: "“అయిపోయింది” అనండి", hi: "“हो गया” बोलिए" })
                 : tr({ en: "Say it's done", te: "అయిపోయింది అనండి", hi: "बोलिए हो गया" })}
             </Text>
           </Pressable>
-        ) : null}
+        )}
       </View>
-      {heard ? (
-        <Text style={[st.heard, { color: heard.ok ? C.green : C.marigold }]}>
-          {heard.ok ? "✓ " : ""}{tr({ en: "Heard", te: "విన్నది", hi: "सुना" })}: “{heard.text || "…"}”{heard.ok ? "" : tr({ en: " · not marked done", te: " · పూర్తి కాలేదు", hi: " · पूरा नहीं माना" })}
-        </Text>
+      {heard !== undefined ? (
+        <Text style={[st.heard, { color: C.marigold }]}>{tr({ en: "Heard", te: "విన్నది", hi: "सुना" })}: “{heard || "…"}” · {tr({ en: "not done yet, try again", te: "ఇంకా కాలేదు, మళ్ళీ చెప్పండి", hi: "अभी नहीं, फिर बोलिए" })}</Text>
       ) : null}
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  row: { backgroundColor: "#fff", borderRadius: 22, padding: 14, ...softShadow },
+  row: { backgroundColor: "#fff", borderRadius: 24, padding: 16, ...softShadow, borderWidth: 1.5, borderColor: "transparent" },
+  rowDue: { borderColor: "#F6C48E" },
+  rowLive: { borderColor: "#9FD8B5" },
+  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  pill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#F3EEFB", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  pillText: { fontSize: 13, fontWeight: "700", color: S.ink },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.green },
+  stepsBox: { marginTop: 12, backgroundColor: "#F1FAF4", borderRadius: 18, paddingVertical: 12, alignItems: "center" },
+  stepsNum: { fontSize: 40, fontWeight: "800", color: "#2E7A50" },
+  stepsLabel: { fontSize: 13, color: "#2E7A50", fontWeight: "600" },
+  iconBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#F3EEFB", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#E3DAF5" },
+  startBtn: { backgroundColor: C.green },
+  progressRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  progressTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "#EFEAF5", overflow: "hidden" },
+  progressFill: { height: 8, borderRadius: 4, backgroundColor: C.green },
+  progressText: { fontSize: 13, fontWeight: "700", color: S.muted },
+  doneBanner: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#EAF6EE", borderRadius: 18, padding: 12 },
+  doneText: { flex: 1, fontSize: 14, fontWeight: "700", color: "#2E7A50" },
+  allDone: { alignItems: "center", backgroundColor: "#fff", borderRadius: 24, padding: 22, ...softShadow },
+  allDoneText: { fontSize: 16, fontWeight: "700", color: S.ink, textAlign: "center", marginTop: 6 },
   actions: { flexDirection: "row", gap: 10, marginTop: 12 },
   actBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 999, paddingVertical: 14, minHeight: 52 },
   listenBtn: { backgroundColor: S.black },

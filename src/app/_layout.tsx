@@ -25,6 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="chairstand" options={{ title: "Chair stand" }} />
         <Stack.Screen name="memory" options={{ title: "Memory check" }} />
         <Stack.Screen name="heart" options={{ title: "Heart rate" }} />
+        <Stack.Screen name="health" options={{ title: "Health checks" }} />
         <Stack.Screen name="check" options={{ title: "Bujji, check this" }} />
         <Stack.Screen name="family" options={{ title: "Ravi's dashboard" }} />
         <Stack.Screen name="results" options={{ title: "Results" }} />

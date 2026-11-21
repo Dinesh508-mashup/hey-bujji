@@ -163,16 +163,16 @@ export function PillButton({ label, onPress, disabled }: { label: string; onPres
   );
 }
 
-type Tab = { icon: IconName; label: string; href: string };
+type Tab = { icon: IconName; iconOn: IconName; label: string; href: string; center?: boolean };
 const TABS: Tab[] = [
-  { icon: "home", label: "Home", href: "/" },
-  { icon: "document-text-outline", label: "Check a message", href: "/check" },
-  { icon: "add-circle-outline", label: "Check-in", href: "/checkin" },
-  { icon: "mic-outline", label: "Talk to Bujji", href: "/parent" },
-  { icon: "stats-chart-outline", label: "Results", href: "/results" },
+  { icon: "home-outline", iconOn: "home", label: "Home", href: "/" },
+  { icon: "fitness-outline", iconOn: "fitness", label: "Health", href: "/health" },
+  { icon: "mic-outline", iconOn: "mic", label: "Talk", href: "/parent", center: true },
+  { icon: "shield-checkmark-outline", iconOn: "shield-checkmark", label: "Scam", href: "/check" },
+  { icon: "trophy-outline", iconOn: "trophy", label: "Results", href: "/results" },
 ];
 
-/** Floating white capsule tab bar; the active tab is a black circle. */
+/** Floating white capsule tab bar with labels; "Talk" is the big centre button. */
 export function FloatingTabBar({ active }: { active: string }) {
   const insets = useSafeAreaInsets();
   return (
@@ -183,8 +183,17 @@ export function FloatingTabBar({ active }: { active: string }) {
           return (
             <Pressable key={t.href} accessibilityRole="tab" accessibilityLabel={t.label} accessibilityState={{ selected: on }}
               onPress={() => { tap(); if (!on) router.navigate(t.href as never); }}
-              style={[b.tab, on ? b.tabOn : null]}>
-              <Ionicons name={t.icon} size={20} color={on ? "#fff" : "#8A8A90"} />
+              style={b.tab}>
+              {t.center ? (
+                <LinearGradient colors={["#F7A35C", "#E5767A"]} style={b.talk}>
+                  <Ionicons name={t.iconOn} size={26} color="#fff" />
+                </LinearGradient>
+              ) : (
+                <View style={[b.tabIcon, on ? b.tabOn : null]}>
+                  <Ionicons name={on ? t.iconOn : t.icon} size={21} color={on ? "#fff" : "#6E6E76"} />
+                </View>
+              )}
+              <Text style={[b.tabLabel, on || t.center ? { color: S.ink, fontWeight: "700" } : null]}>{t.label}</Text>
             </Pressable>
           );
         })}
@@ -227,9 +236,12 @@ const b = StyleSheet.create({
   pillText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   tabWrap: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   tabBar: {
-    flexDirection: "row", gap: 6, backgroundColor: "#fff", borderRadius: 999, padding: 6,
+    flexDirection: "row", gap: 2, backgroundColor: "#fff", borderRadius: 30, paddingHorizontal: 8, paddingTop: 6, paddingBottom: 6, alignItems: "flex-end",
     shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 8,
   },
-  tab: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  tab: { width: 62, alignItems: "center", justifyContent: "flex-end" },
+  tabIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   tabOn: { backgroundColor: S.black },
+  talk: { width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center", marginTop: -22, borderWidth: 4, borderColor: "#fff" },
+  tabLabel: { fontSize: 11, color: "#6E6E76", marginTop: 2 },
 });

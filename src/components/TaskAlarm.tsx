@@ -98,6 +98,21 @@ export function AlarmModal({ task, onStop, onSayDone }: { task: Task | null; onS
   );
 }
 
+const START_KEY = "heybujji.taskStarted"; // { [taskId]: ISO time Amma pressed Start }
+
+/** Tasks Amma has started today (walks etc.), kept across app reloads; logged for Ravi. */
+export function useTaskStarts() {
+  const [started, setStarted] = useState<Record<string, string>>({});
+  useEffect(() => { AsyncStorage.getItem(START_KEY).then((v) => v && setStarted(JSON.parse(v))).catch(() => {}); }, []);
+  const startedAt = useCallback((id: string) => (started[id] && new Date(started[id]).toDateString() === new Date().toDateString() ? started[id] : null), [started]);
+  const start = useCallback((t: Task) => {
+    const at = new Date().toISOString();
+    setStarted((s) => { const n = { ...s, [t.id]: at }; AsyncStorage.setItem(START_KEY, JSON.stringify(n)).catch(() => {}); return n; });
+    logEvent("task_started", `Amma started: ${t.title}`, "normal", { task_id: t.id, kind: t.kind }).catch(() => {});
+  }, []);
+  return { startedAt, start };
+}
+
 /** One-off step count between `since` and now; null if the pedometer isn't available. */
 export async function stepsSince(since: Date): Promise<number | null> {
   try {
@@ -108,8 +123,8 @@ export async function stepsSince(since: Date): Promise<number | null> {
 }
 
 /** When a walk "starts" for step counting: when Amma stopped the alarm, else the task's set time today. */
-export function walkStart(t: Task, stoppedAt: string | null): Date | null {
-  if (stoppedAt) return new Date(stoppedAt);
+export function walkStart(t: Task, startedAt: string | null): Date | null {
+  if (startedAt) return new Date(startedAt);
   if (!t.time) return null;
   const [h, m] = t.time.split(":").map(Number);
   const d = new Date(); d.setHours(h, m, 0, 0);
