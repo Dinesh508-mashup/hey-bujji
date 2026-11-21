@@ -19,8 +19,21 @@ async function timed<T>(fn: () => Promise<T>): Promise<[T, number]> {
   return [v, Date.now() - t0];
 }
 
+// Sarvam rejects some common labels (e.g. "audio/m4a" from iOS uploads) even
+// though the bytes are fine. Relabel by extension before forwarding.
+const SARVAM_MIME: Record<string, string> = { m4a: "audio/x-m4a", mp4: "audio/mp4", aac: "audio/aac", wav: "audio/wav", mp3: "audio/mpeg", webm: "audio/webm", ogg: "audio/ogg" };
+export function sarvamMime(type: string, filename: string): string {
+  if (type === "audio/m4a" || type === "" || type === "application/octet-stream") {
+    const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+    return SARVAM_MIME[ext] ?? "audio/x-m4a";
+  }
+  return type;
+}
+
 export async function sarvamStt(cfg: SttConfig, audio: Blob, filename: string): Promise<SttResult> {
   if (!cfg.sarvamKey) throw new Error("SARVAM_API_KEY is not set");
+  const mime = sarvamMime(audio.type, filename);
+  if (mime !== audio.type) audio = new Blob([await audio.arrayBuffer()], { type: mime });
   const [data, ms] = await timed(async () => {
     const form = new FormData();
     form.append("file", audio, filename);

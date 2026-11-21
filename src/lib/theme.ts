@@ -1,23 +1,30 @@
+// Soft pastel palette (white page, near-black ink, pastel tints).
+// Key names are kept from the original theme so every screen picks the new look up.
 export const C = {
-  bg: "#FFF8EE",
+  bg: "#FFFFFF",
   card: "#FFFFFF",
-  ink: "#1F2A2E",
-  muted: "#5E6B70",
-  line: "#EADFCF",
-  teal: "#0F5E59",
-  tealSoft: "#DCEFEC",
-  marigold: "#F2A93B",
-  marigoldSoft: "#FDEFD6",
-  red: "#C62828",
-  redSoft: "#FDE3E1",
-  green: "#2E7D32",
-  greenSoft: "#E3F2E4",
+  ink: "#141414",
+  muted: "#7A7A80",
+  line: "#EEEEF2",
+  field: "#F6F6F9",
+  teal: "#140A0A", // primary action: black pill
+  tealSoft: "#E6F4EE", // mint
+  marigold: "#F2A65A",
+  marigoldSoft: "#FFF1E3", // peach
+  red: "#E5484D",
+  redSoft: "#FDECEC",
+  green: "#3FA36B",
+  greenSoft: "#E7F6EE",
+  violet: "#9B87E8",
+  violetSoft: "#F0ECFC",
+  sky: "#5FB3E6",
+  skySoft: "#E6F3FB",
 };
 
 export const shadow = {
-  shadowColor: "#3B2A10",
+  shadowColor: "#5B4A7A",
   shadowOpacity: 0.08,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: 4 },
+  shadowRadius: 18,
+  shadowOffset: { width: 0, height: 6 },
   elevation: 3,
 };

@@ -51,6 +51,12 @@ data/               eval-results.json / sensor-results.json, written only by the
 
 ## Evaluation (the deliverable)
 
+The 40 test sentences in `eval/truth.csv` are in English (presentation audience).
+
+**No recording needed:** `python3 eval/make_tts_clips.py` speaks all 40 sentences with two macOS voices into `eval/clips/` (`s09__tts-grandma.m4a`, ...), then skip to step 3. A run made only from these clips is labelled "computer voices, not real people" on `/results`.
+
+**Real speakers (stronger evidence):**
+
 1. In the app: **Record test clips** → enter speaker tag, tick consent, read the sentences (4–6 speakers, 2+ aged 55 or older, some with TV or kitchen noise). Clips upload as `s09__amma.m4a`.
 2. `python3 eval/fetch_clips.py`
 3. `python3 eval/run_eval.py` runs every clip through **Whisper**, **Indian ASR only** (ablation) and **Hey Bujji**, then prints the table and writes `eval/out/results.csv` plus `data/eval-results.json`. The `/results` page reads that file.
@@ -63,12 +69,12 @@ data/               eval-results.json / sensor-results.json, written only by the
 
 | # | Say / do | Phone | Dashboard |
 |---|---|---|---|
-| 1 | "Naa BP tablet teesukunna" | Amlodipine logged | Amma took Amlodipine (BP) |
-| 2 | "Raatri 8 ki sugar tablet gurthu cheyyi" | Metformin at 8:00 PM, daily notification | reminder line |
-| 3 | "Abbayiki call cheyyi" | "Ravi కి కాల్…" then the dialler | call line |
+| 1 | "I took my BP tablet" | Amlodipine logged | Amma took Amlodipine (BP) |
+| 2 | "Remind me to take my sugar tablet at 8 pm" | Metformin at 8:00 PM, daily notification | reminder line |
+| 3 | "Call my son" | "Calling Ravi…" then the dialler | call line |
 | 4 | Breathing check | breaths/min + suggestion | breathing line |
-| 5 | "Chest lo noppi ga undi" | red full-screen "Call 108?" | **red urgent banner** |
-| 6 | "Bank nundi call, OTP adigaru" | "OTP ఇవ్వకండి!" | amber possible-scam line |
+| 5 | "I have chest pain" | red full-screen "Call 108?" | **red urgent banner** |
+| 6 | "The bank called and asked for my OTP" | "Don't share the OTP!" | amber possible-scam line |
 
 Press **Reset demo** on the dashboard before each run. A "Type instead" box on the parent screen is the fallback if the venue is noisy.
 

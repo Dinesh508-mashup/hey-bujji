@@ -1,6 +1,7 @@
 // Local reminders with expo-notifications (works in Expo Go on iOS).
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import { currentLang } from "./language";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
@@ -11,11 +12,17 @@ export async function scheduleDailyReminder(hhmm: string, medicine: string | nul
   const perm = await Notifications.requestPermissionsAsync();
   if (!perm.granted) return null;
   const [hour, minute] = hhmm.split(":").map(Number);
-  const what = medicine && medicine !== "all" ? medicine : "మందులు";
+  const lang = currentLang();
+  const named = medicine && medicine !== "all" ? medicine : null;
+  const body = lang === "en"
+    ? `Amma, it's time to take ${named ?? "your medicine"}.`
+    : lang === "hi"
+      ? `अम्मा, ${named ?? "दवाई"} लेने का समय हो गया। (Time for ${named ?? "your medicine"})`
+      : `అమ్మా, ${named ?? "మందులు"} వేసుకునే సమయం అయింది. (Time for ${named ?? "your medicine"})`;
   return Notifications.scheduleNotificationAsync({
     content: {
       title: "Hey Bujji 💊",
-      body: `అమ్మా, ${what} వేసుకునే సమయం అయింది. (Time for ${medicine ?? "your medicine"})`,
+      body,
       sound: true,
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },

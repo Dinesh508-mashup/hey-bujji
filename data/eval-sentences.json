@@ -1,202 +1,202 @@
 [
  {
   "id": "s01",
-  "text": "Naa BP tablet teesukunna",
+  "text": "I took my BP tablet",
   "intent": "took_medicine"
  },
  {
   "id": "s02",
-  "text": "Amlodipine vesukunna ippude",
+  "text": "I just took my Amlodipine",
   "intent": "took_medicine"
  },
  {
   "id": "s03",
-  "text": "Maine sugar ki goli le li",
+  "text": "I took my sugar tablet",
   "intent": "took_medicine"
  },
  {
   "id": "s04",
-  "text": "Morning tablets anni ayipoyayi",
+  "text": "I have finished all my morning tablets",
   "intent": "took_medicine"
  },
  {
   "id": "s05",
-  "text": "Sugar tablet vesukunna tiffin tarvata",
+  "text": "I took the sugar tablet after breakfast",
   "intent": "took_medicine"
  },
  {
   "id": "s06",
-  "text": "Maine BP ki dawai le li hai",
+  "text": "I have taken my blood pressure medicine",
   "intent": "took_medicine"
  },
  {
   "id": "s07",
-  "text": "Metformin ippude vesukunna",
+  "text": "I just took Metformin",
   "intent": "took_medicine"
  },
  {
   "id": "s08",
-  "text": "Subah wali BP ki goli kha li",
+  "text": "I took the morning BP tablet",
   "intent": "took_medicine"
  },
  {
   "id": "s09",
-  "text": "Raatri 8 ki sugar tablet gurthu cheyyi",
+  "text": "Remind me to take my sugar tablet at 8 pm",
   "intent": "set_reminder"
  },
  {
   "id": "s10",
-  "text": "Saayantram 6 gantalaku BP tablet gurthu cheyyi",
+  "text": "Remind me about my BP tablet at 6 in the evening",
   "intent": "set_reminder"
  },
  {
   "id": "s11",
-  "text": "Shaam 7 baje dawai yaad dilana",
+  "text": "Remind me to take my medicine at 7 pm",
   "intent": "set_reminder"
  },
  {
   "id": "s12",
-  "text": "Udayam 8 gantalaku Amlodipine gurthu cheyyi",
+  "text": "Remind me to take Amlodipine at 8 in the morning",
   "intent": "set_reminder"
  },
  {
   "id": "s13",
-  "text": "Raat 9 baje sugar ki goli yaad dilana",
+  "text": "Remind me about my sugar tablet at 9 at night",
   "intent": "set_reminder"
  },
  {
   "id": "s14",
-  "text": "Raatri enimidi ki Metformin gurthu cheyyi",
+  "text": "Set a reminder for Metformin at 8 pm",
   "intent": "set_reminder"
  },
  {
   "id": "s15",
-  "text": "Subah sade aath baje BP ki goli yaad dilana",
+  "text": "Remind me to take my BP tablet at 8:30 in the morning",
   "intent": "set_reminder"
  },
  {
   "id": "s16",
-  "text": "Madhyahnam 2 gantalaku sugar tablet gurthu cheyyi",
+  "text": "Remind me about my sugar tablet at 2 in the afternoon",
   "intent": "set_reminder"
  },
  {
   "id": "s17",
-  "text": "Abbayiki call cheyyi",
+  "text": "Call my son",
   "intent": "call_family"
  },
  {
   "id": "s18",
-  "text": "Ammayi ki phone kalupu",
+  "text": "Call my daughter",
   "intent": "call_family"
  },
  {
   "id": "s19",
-  "text": "Ravi ko phone lagao",
+  "text": "Please call Ravi",
   "intent": "call_family"
  },
  {
   "id": "s20",
-  "text": "Babu ki phone cheyyi",
+  "text": "Phone my son",
   "intent": "call_family"
  },
  {
   "id": "s21",
-  "text": "Beti ko call karo",
+  "text": "Can you call my daughter",
   "intent": "call_family"
  },
  {
   "id": "s22",
-  "text": "Ravi ki call cheyyi",
+  "text": "Call Ravi now",
   "intent": "call_family"
  },
  {
   "id": "s23",
-  "text": "Beta ko phone lagao",
+  "text": "I want to talk to my son",
   "intent": "call_family"
  },
  {
   "id": "s24",
-  "text": "Ammayiki phone cheyyi",
+  "text": "Call Priya",
   "intent": "call_family"
  },
  {
   "id": "s25",
-  "text": "Chest lo noppi ga undi",
+  "text": "I have chest pain",
   "intent": "red_flag"
  },
  {
   "id": "s26",
-  "text": "Kallu tiruguthunnayi",
+  "text": "I feel dizzy",
   "intent": "red_flag"
  },
  {
   "id": "s27",
-  "text": "Usuru aadatledu",
+  "text": "I can't breathe properly",
   "intent": "red_flag"
  },
  {
   "id": "s28",
-  "text": "Seene mein dard hai",
+  "text": "My chest is hurting",
   "intent": "red_flag"
  },
  {
   "id": "s29",
-  "text": "Mujhe chakkar aa raha hai",
+  "text": "My head is spinning",
   "intent": "red_flag"
  },
  {
   "id": "s30",
-  "text": "Saans lene mein taklif ho rahi hai",
+  "text": "I am having trouble breathing",
   "intent": "red_flag"
  },
  {
   "id": "s31",
-  "text": "Gunde lo noppi ga undi",
+  "text": "There is a pain in my chest",
   "intent": "red_flag"
  },
  {
   "id": "s32",
-  "text": "Tala tiruguthondi",
+  "text": "I feel very dizzy and weak",
   "intent": "red_flag"
  },
  {
   "id": "s33",
-  "text": "Bank nundi call OTP adigaru",
+  "text": "Someone called from the bank and asked for my OTP",
   "intent": "scam_report"
  },
  {
   "id": "s34",
-  "text": "Police ani cheppi dabbulu adugutunnaru",
+  "text": "A man said he is from the police and is asking for money",
   "intent": "scam_report"
  },
  {
   "id": "s35",
-  "text": "KYC update cheyyamani link pampincharu",
+  "text": "They sent me a link to update my KYC",
   "intent": "scam_report"
  },
  {
   "id": "s36",
-  "text": "Bank se call aaya OTP maang rahe hain",
+  "text": "The bank called and wants my OTP",
   "intent": "scam_report"
  },
  {
   "id": "s37",
-  "text": "Lottery vachindi ani dabbulu kattamannaru",
+  "text": "They said I won a lottery and asked me to pay a fee",
   "intent": "scam_report"
  },
  {
   "id": "s38",
-  "text": "Account block avutundi ani message vachindi",
+  "text": "I got a message saying my account will be blocked",
   "intent": "scam_report"
  },
  {
   "id": "s39",
-  "text": "Parcel kosam dabbulu pampamani call vachindi",
+  "text": "Someone called asking for money to release a parcel",
   "intent": "scam_report"
  },
  {
   "id": "s40",
-  "text": "OTP ichesanu dabbulu poyayi",
+  "text": "I gave the OTP and my money is gone",
   "intent": "scam_report"
  }
 ]

@@ -46,6 +46,7 @@ export async function runPipeline(opts: {
   text?: string; // typed input skips speech-to-text
   strict?: boolean; // evaluation: never fall back to rules
   reference?: string; // evaluation: correct transcript, for character error rate
+  replyLang?: "te" | "hi"; // app language setting; the evaluation never sets it
 }): Promise<PipelineResult> {
   const t0 = Date.now();
   const { pipeline, family } = opts;
@@ -93,7 +94,7 @@ export async function runPipeline(opts: {
     llmError,
     intent,
     overrides,
-    reply: buildReply(intent, family),
+    reply: buildReply(intent, family, opts.replyLang),
     feed: feedLine(intent, family),
     action: actionFor(intent, family),
     cer: opts.reference ? Math.round(charErrorRate(opts.reference, transcript) * 1000) / 1000 : null,

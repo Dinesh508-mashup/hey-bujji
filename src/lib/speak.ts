@@ -38,7 +38,7 @@ export async function speak(text: string, lang: "te-IN" | "hi-IN" | "en-IN" = "t
   if (voice || !isConfigured) {
     await Promise.race([
       new Promise<void>((resolve) =>
-        Speech.speak(text, { language: lang, voice: voice ?? undefined, rate: 0.9, onDone: resolve, onStopped: resolve, onError: () => resolve() })),
+        Speech.speak(text, { language: lang, voice: voice ?? undefined, rate: 0.9, volume: 1, onDone: resolve, onStopped: resolve, onError: () => resolve() })),
       timeout(20000),
     ]);
     return voice ? "device" : "none";

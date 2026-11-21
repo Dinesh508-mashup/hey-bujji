@@ -183,7 +183,7 @@ def main():
             fields = {"pipeline": p, "dry_run": "1", "strict": "1", "reference": t["transcript"]}
             if path:
                 ext = path.suffix.lower().lstrip(".")
-                ctype = {"m4a": "audio/m4a", "wav": "audio/wav", "mp3": "audio/mpeg", "webm": "audio/webm", "ogg": "audio/ogg", "aac": "audio/aac", "mp4": "audio/mp4"}[ext]
+                ctype = {"m4a": "audio/x-m4a", "wav": "audio/wav", "mp3": "audio/mpeg", "webm": "audio/webm", "ogg": "audio/ogg", "aac": "audio/aac", "mp4": "audio/mp4"}[ext]
                 res = call(endpoint, key, fields, {"audio": (path.name, path.read_bytes(), ctype)})
             else:
                 res = call(endpoint, key, {**fields, "text": t["transcript"], "dry_run": True, "strict": True})
@@ -255,11 +255,13 @@ def main():
         "run_at": stamp,
         "clips": len(items),
         "speakers": sorted({s for _, _, s in items}),
+        "synthetic": bool(items) and all(str(s).startswith("tts-") for _, _, s in items),
         "pipelines": summary,
         "examples": examples[:3],
         "bujji_failures": failures[:10],
         "note": ("Text-only sanity run on the true transcripts: no speech recognition involved. Do not present as the evaluation."
-                 if args.text_only else "Same audio and same LLM prompt for every pipeline; only the speech model and the correction step differ."),
+                 if args.text_only else "Same audio and same LLM prompt for every pipeline; only the speech model and the correction step differ."
+                 + (" Clips are computer text-to-speech voices (eval/make_tts_clips.py), not real speakers." if items and all(str(s).startswith("tts-") for _, _, s in items) else "")),
     }
     (out_dir / "summary.json").write_text(json.dumps(result, ensure_ascii=False, indent=1))
     if not args.text_only:

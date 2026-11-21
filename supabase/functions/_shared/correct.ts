@@ -281,9 +281,11 @@ export function normaliseTime(toks: Tok[]): { time: string; span: [number, numbe
 // ---------- red flags and scams ----------
 
 const SYMPTOM_PHRASES: [Symptom, string[][], number][] = [
-  ["chest_pain", [["chest", "chaati", "chati", "gunde", "gunda", "seene", "seena", "sina", "heart", "chhati", "chhaati", "ఛాతీ"], ["noppi", "noppiga", "nopi", "dard", "pain", "baadha", "bhaari"]], 2],
+  ["chest_pain", [["chest", "chaati", "chati", "gunde", "gunda", "seene", "seena", "sina", "heart", "chhati", "chhaati", "ఛాతీ"], ["noppi", "noppiga", "nopi", "dard", "pain", "baadha", "bhaari", "hurting", "hurts", "ache", "aching", "pressure", "tight"]], 2],
+  ["chest_pain", [["pain", "hurting", "ache", "pressure"], ["chest"]], 3],
   ["chest_pain", [["chest pain", "chestpain"]], 0],
   ["breathlessness", [["usuru", "uusuru", "swasa", "shwasa", "svasa", "saans", "sans", "breath", "breathing", "oopiri", "upiri"], ["aadatledu", "adatledu", "aadatla", "aadadam", "ravatledu", "raavatledu", "nahi", "nahin", "phool", "fool", "problem", "kashtam", "ledu", "difficult", "taklif", "takleef"]], 2],
+  ["breathlessness", [["cant", "can't", "can", "cannot", "trouble", "difficulty", "hard", "short", "shortness"], ["breathe", "breathing", "breath"]], 3],
   ["breathlessness", [["breathless", "breathlessness", "dum", "aayasam", "ayasam", "aayasamga"]], 0],
   ["dizziness", [["kallu", "kalu", "tala", "thala", "sir", "head"], ["tirugutunnayi", "tiruguthunnayi", "thiruguthunnayi", "tirugu", "thirugu", "ghoom", "ghum", "spinning", "chakkar"]], 2],
   ["dizziness", [["chakkar", "dizzy", "dizziness", "kallutirugu", "giddiness", "giddy", "behosh"]], 0],
@@ -299,12 +301,15 @@ const SCAM_PHRASES: string[][][] = [
   [["bank", "baank", "banku", "bank nundi"], ["call", "phone", "fon", "kaal", "message", "sms"]],
   [["account", "khata", "card", "atm"], ["block", "band", "close", "suspend", "expire"]],
   [["dabbulu", "dabbu", "paise", "paisa", "money", "amount"], ["adugutunnaru", "adigaru", "adugutunnadu", "maang", "maange", "mang", "ask", "pampamannaru", "bhejo"]],
+  [["ask", "asking", "asked", "wants", "pay"], ["money", "fee", "payment", "otp"]],
   [["pin", "cvv", "password"]],
 ];
 
 const MONEY_SENT_PHRASES: string[][][] = [
   [["dabbulu", "dabbu", "money", "paise", "paisa", "amount", "rupees", "rupaayalu", "rs"], ["pampesanu", "pampesa", "pampanu", "pampinchanu", "pampinchesanu", "bhej", "sent", "transfer", "kattesanu", "kattanu", "ichesanu", "icchesanu", "ichanu", "diye", "diya", "paid"]],
   [["pampesanu", "pampinchesanu", "transfer chesanu", "already paid", "bhej diye", "bhej diya", "de diye", "kat gaye", "cut ayyayi", "poyayi"]],
+  [["money", "amount", "rupees", "savings"], ["gone", "lost", "debited", "deducted", "taken"]],
+  [["gave", "shared", "told"], ["otp", "pin", "cvv", "password"]],
 ];
 
 function hasAny(toks: Tok[], phrases: string[][][], gap = 3): boolean {

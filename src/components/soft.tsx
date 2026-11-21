@@ -20,6 +20,9 @@ export const S = {
   // header gradients
   bloom: ["#D9C9F2", "#F2CFE3", "#FBE4EC", "#FFFFFF"] as const,
   mint: ["#BFE3D2", "#DCEFE6", "#F1F8F4", "#FFFFFF"] as const,
+  dawn: ["#FBD3B0", "#FCE3D3", "#FFF3EA", "#FFFFFF"] as const,
+  sea: ["#BFE0F5", "#D9EEF7", "#F0F8FB", "#FFFFFF"] as const,
+  dusk: ["#CFC4F4", "#E3DAF8", "#F3EFFC", "#FFFFFF"] as const,
   // icon tints
   peach: ["#FFD3A8", "#F7A35C"] as const,
   sage: ["#D8EBDD", "#9CC8A8"] as const,
@@ -76,12 +79,12 @@ export function HeroBadge({ icon }: { icon: IconName }) {
   );
 }
 
-export function Hero({ icon, eyebrow, title }: { icon: IconName; eyebrow: string; title: string }) {
+export function Hero({ icon, eyebrow, title, compact }: { icon: IconName; eyebrow?: string; title: string; compact?: boolean }) {
   return (
-    <View style={{ alignItems: "center", marginTop: 24, marginBottom: 28 }}>
+    <View style={{ alignItems: "center", marginTop: compact ? 8 : 24, marginBottom: compact ? 22 : 28 }}>
       <HeroBadge icon={icon} />
-      <Text style={b.eyebrow}>{eyebrow}</Text>
-      <Text style={b.title}>{title}</Text>
+      {eyebrow ? <Text style={b.eyebrow}>{eyebrow}</Text> : null}
+      <Text style={[b.title, compact ? { fontSize: 28, lineHeight: 34 } : null]}>{title}</Text>
     </View>
   );
 }
@@ -165,7 +168,7 @@ const TABS: Tab[] = [
   { icon: "home", label: "Home", href: "/" },
   { icon: "document-text-outline", label: "Check a message", href: "/check" },
   { icon: "add-circle-outline", label: "Check-in", href: "/checkin" },
-  { icon: "time-outline", label: "Family feed", href: "/family" },
+  { icon: "mic-outline", label: "Talk to Bujji", href: "/parent" },
   { icon: "stats-chart-outline", label: "Results", href: "/results" },
 ];
 
@@ -179,7 +182,7 @@ export function FloatingTabBar({ active }: { active: string }) {
           const on = t.href === active;
           return (
             <Pressable key={t.href} accessibilityRole="tab" accessibilityLabel={t.label} accessibilityState={{ selected: on }}
-              onPress={() => { tap(); if (!on) router.push(t.href as never); }}
+              onPress={() => { tap(); if (!on) router.navigate(t.href as never); }}
               style={[b.tab, on ? b.tabOn : null]}>
               <Ionicons name={t.icon} size={20} color={on ? "#fff" : "#8A8A90"} />
             </Pressable>

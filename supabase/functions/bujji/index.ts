@@ -26,6 +26,8 @@ Deno.serve(async (req) => {
     let dryRun = false;
     let strict = false;
     let reference: string | undefined;
+    let replyLang: "te" | "hi" | undefined;
+    const pickLang = (v: unknown) => (v === "te" || v === "hi" ? v : undefined);
 
     const type = req.headers.get("content-type") ?? "";
     if (type.includes("multipart/form-data")) {
@@ -38,6 +40,7 @@ Deno.serve(async (req) => {
       familyId = (form.get("family_id") as string) || familyId;
       dryRun = form.get("dry_run") === "1";
       strict = form.get("strict") === "1";
+      replyLang = pickLang(form.get("reply_lang"));
     } else {
       const body = await req.json();
       text = body.text;
@@ -46,11 +49,12 @@ Deno.serve(async (req) => {
       familyId = body.family_id || familyId;
       dryRun = !!body.dry_run;
       strict = !!body.strict;
+      replyLang = pickLang(body.reply_lang);
     }
     if (!audio && !text) return json({ error: "send audio or text" }, 400);
 
     const family = await loadFamily(E.db, familyId);
-    const result = await runPipeline({ pipeline, family, stt: E.stt, llm: E.llm, audio, filename, text, strict, reference });
+    const result = await runPipeline({ pipeline, family, stt: E.stt, llm: E.llm, audio, filename, text, strict, reference, replyLang });
 
     if (!dryRun && result.feed) {
       await insertEvent(E.db, {

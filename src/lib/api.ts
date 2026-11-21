@@ -1,7 +1,9 @@
 // Calls to the Supabase edge functions. No API keys here: only the public anon key.
 import { Platform } from "react-native";
+import { File } from "expo-file-system";
 import { FAMILY_ID, FUNCTIONS_URL, SUPABASE_ANON_KEY } from "./config";
 import { supabase } from "./supabase";
+import { currentLang } from "./language";
 
 export type Intent = {
   intent: "took_medicine" | "set_reminder" | "call_family" | "red_flag" | "scam_report" | "other";
@@ -46,50 +48,74 @@ export type CheckResult = {
 
 export const authHeaders = { authorization: `Bearer ${SUPABASE_ANON_KEY}`, apikey: SUPABASE_ANON_KEY };
 
-async function post<T>(fn: string, body: FormData | object): Promise<T> {
-  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
-  const res = await fetch(`${FUNCTIONS_URL}/${fn}`, {
-    method: "POST",
-    headers: isForm ? authHeaders : { ...authHeaders, "content-type": "application/json" },
-    body: isForm ? (body as FormData) : JSON.stringify(body),
-  });
+type Part = { name: string; value: string } | { name: string; uri: string; filename: string; type: string };
+
+async function post<T>(fn: string, body: Part[] | object): Promise<T> {
+  const init: { method: string; headers: Record<string, string>; body: BodyInit } = Array.isArray(body)
+    ? await multipart(body as Part[])
+    : { method: "POST", headers: { ...authHeaders, "content-type": "application/json" }, body: JSON.stringify(body) };
+  const res = await fetch(`${FUNCTIONS_URL}/${fn}`, init);
   const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
   if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`);
   return data as T;
 }
 
-/** Append a local file (iOS file:// URI or web blob: URI) to a FormData. */
-async function appendFile(form: FormData, field: string, uri: string, name: string, type: string) {
+/**
+ * Multipart upload. Web: a normal FormData. iPhone: the multipart body is built by hand
+ * from the file's bytes, because Expo SDK 58's fetch rejects React Native's
+ * { uri, name, type } file parts ("Unsupported FormDataPart implementation").
+ */
+async function multipart(parts: Part[]) {
   if (Platform.OS === "web") {
-    const blob = await (await fetch(uri)).blob();
-    form.append(field, blob, name);
-  } else {
-    // React Native's FormData accepts { uri, name, type }
-    form.append(field, { uri, name, type } as unknown as Blob);
+    const form = new FormData();
+    for (const p of parts) {
+      if ("value" in p) form.append(p.name, p.value);
+      else form.append(p.name, await (await fetch(p.uri)).blob(), p.filename);
+    }
+    return { method: "POST", headers: { ...authHeaders }, body: form as BodyInit };
   }
+  const boundary = `----bujji${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`;
+  const enc = new TextEncoder();
+  const chunks: Uint8Array[] = [];
+  for (const p of parts) {
+    if ("value" in p) {
+      chunks.push(enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="${p.name}"\r\n\r\n${p.value}\r\n`));
+    } else {
+      chunks.push(enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="${p.name}"; filename="${p.filename}"\r\nContent-Type: ${p.type}\r\n\r\n`));
+      chunks.push(await new File(p.uri).bytes());
+      chunks.push(enc.encode("\r\n"));
+    }
+  }
+  chunks.push(enc.encode(`--${boundary}--\r\n`));
+  const out = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+  let o = 0;
+  for (const c of chunks) { out.set(c, o); o += c.length; }
+  return { method: "POST", headers: { ...authHeaders, "content-type": `multipart/form-data; boundary=${boundary}` }, body: out as unknown as BodyInit };
 }
 
-export async function sendVoice(uri: string): Promise<BujjiResult> {
-  const form = new FormData();
+export async function sendVoice(uri: string, opts: { dryRun?: boolean } = {}): Promise<BujjiResult> {
   const ext = uri.split(".").pop()?.split("?")[0] || "m4a";
   const isWebm = Platform.OS === "web" && !/m4a|mp4|wav/.test(ext);
-  await appendFile(form, "audio", uri, isWebm ? "clip.webm" : `clip.${ext}`, isWebm ? "audio/webm" : "audio/m4a");
-  form.append("pipeline", "bujji");
-  form.append("family_id", FAMILY_ID);
-  return post<BujjiResult>("bujji", form);
+  const parts: Part[] = [
+    { name: "audio", uri, filename: isWebm ? "clip.webm" : `clip.${ext}`, type: isWebm ? "audio/webm" : "audio/x-m4a" }, // Sarvam rejects "audio/m4a"
+    { name: "pipeline", value: "bujji" },
+    { name: "family_id", value: FAMILY_ID },
+  ];
+  if (opts.dryRun) parts.push({ name: "dry_run", value: "1" }); // understand only: nothing posted to the family feed
+  if (currentLang() !== "en") parts.push({ name: "reply_lang", value: currentLang() });
+  return post<BujjiResult>("bujji", parts);
 }
 
 export function sendText(text: string): Promise<BujjiResult> {
-  return post<BujjiResult>("bujji", { text, pipeline: "bujji", family_id: FAMILY_ID });
+  const l = currentLang();
+  return post<BujjiResult>("bujji", { text, pipeline: "bujji", family_id: FAMILY_ID, ...(l !== "en" ? { reply_lang: l } : {}) });
 }
 
 export async function checkMessage(input: { text?: string; file?: { uri: string; mime: string; name: string } }, lang: "te" | "hi" = "te"): Promise<CheckResult> {
-  const form = new FormData();
-  if (input.text) form.append("text", input.text);
-  if (input.file) await appendFile(form, "file", input.file.uri, input.file.name, input.file.mime);
-  form.append("lang", lang);
-  form.append("family_id", FAMILY_ID);
-  return post<CheckResult>("check-message", form);
+  const parts: Part[] = [{ name: "lang", value: lang }, { name: "family_id", value: FAMILY_ID }];
+  if (input.text) parts.push({ name: "text", value: input.text });
+  if (input.file) parts.push({ name: "file", uri: input.file.uri, filename: input.file.name, type: input.file.mime });
+  return post<CheckResult>("check-message", parts);
 }
 
 export function ttsUrl(text: string, lang: string): string {

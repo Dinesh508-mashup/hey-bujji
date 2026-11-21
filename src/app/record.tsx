@@ -6,7 +6,8 @@ import { File } from "expo-file-system";
 import { Card, Screen, styles as ui } from "../components/ui";
 import { useVoiceRecorder } from "../lib/audio";
 import { supabase } from "../lib/supabase";
-import { C } from "../lib/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { C, shadow } from "../lib/theme";
 import sentences from "../../data/eval-sentences.json";
 
 type Status = "idle" | "recording" | "uploading" | "done" | "error";
@@ -51,15 +52,14 @@ export default function RecordClips() {
 
   const done = Object.values(status).filter((s) => s === "done").length;
   return (
-    <Screen>
-      <Text style={ui.h2}>Record test clips</Text>
+    <Screen title="Record test clips" eyebrow="For the accuracy evaluation" icon="radio-button-on" tint="bloom">
       <Text style={[ui.muted, { marginBottom: 12 }]}>
         Read each sentence naturally, in your own way. Mix in some TV or kitchen noise for a few. Aim for 4–6 speakers, 2+ aged 55 or older.
       </Text>
       <Card>
         <TextInput value={speaker} onChangeText={setSpeaker} placeholder="Speaker name or tag (e.g. amma, uncle62)" style={st.input} autoCapitalize="none" />
         <Pressable onPress={() => setConsent((c) => !c)} style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-          <Text style={{ fontSize: 24 }}>{consent ? "☑️" : "⬜️"}</Text>
+          <View style={[st.box, consent ? st.boxOn : null]}>{consent ? <Ionicons name="checkmark" size={15} color="#fff" /> : null}</View>
           <Text style={[ui.body, { flex: 1 }]}>The speaker agreed to be recorded for this test; clips are deleted after the event.</Text>
         </Pressable>
       </Card>
@@ -68,13 +68,15 @@ export default function RecordClips() {
       {(sentences as { id: string; text: string; intent: string }[]).map((s) => {
         const st0 = status[s.id] ?? "idle";
         return (
-          <Pressable key={s.id} onPress={() => toggle(s.id)} style={[st.row, st0 === "recording" ? { borderColor: C.red, backgroundColor: C.redSoft } : st0 === "done" ? { borderColor: C.green } : null]}>
+          <Pressable key={s.id} onPress={() => toggle(s.id)} style={[st.row, st0 === "recording" ? { borderColor: C.red, backgroundColor: C.redSoft } : st0 === "done" ? { borderColor: C.green, backgroundColor: C.greenSoft } : null]}>
             <Text style={st.id}>{s.id}</Text>
             <View style={{ flex: 1 }}>
               <Text style={st.text}>{s.text}</Text>
               <Text style={ui.muted}>{s.intent.replace("_", " ")}</Text>
             </View>
-            <Text style={{ fontSize: 22 }}>{st0 === "recording" ? "⏺" : st0 === "uploading" ? "⏳" : st0 === "done" ? "✅" : st0 === "error" ? "⚠️" : "🎙️"}</Text>
+            <View style={[st.recBtn, st0 === "recording" ? { backgroundColor: C.red } : st0 === "done" ? { backgroundColor: C.green } : null]}>
+              <Ionicons size={18} color="#fff" name={st0 === "recording" ? "stop" : st0 === "uploading" ? "cloud-upload" : st0 === "done" ? "checkmark" : st0 === "error" ? "alert" : "mic"} />
+            </View>
           </Pressable>
         );
       })}
@@ -83,8 +85,11 @@ export default function RecordClips() {
 }
 
 const st = StyleSheet.create({
-  input: { fontSize: 18, borderWidth: 1.5, borderColor: C.line, borderRadius: 14, padding: 14, marginBottom: 12, backgroundColor: "#fff", color: C.ink },
-  row: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.card, borderRadius: 16, padding: 14, marginBottom: 8, borderWidth: 1.5, borderColor: C.line },
-  id: { fontWeight: "800", color: C.muted, width: 34 },
-  text: { fontSize: 18, fontWeight: "700", color: C.ink },
+  input: { fontSize: 17, borderRadius: 16, padding: 15, marginBottom: 14, backgroundColor: C.field, color: C.ink },
+  box: { width: 24, height: 24, borderRadius: 8, borderWidth: 1.5, borderColor: C.ink, alignItems: "center", justifyContent: "center" },
+  boxOn: { backgroundColor: C.ink },
+  recBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.teal, alignItems: "center", justifyContent: "center" },
+  row: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.card, borderRadius: 20, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "transparent", ...shadow },
+  id: { fontWeight: "600", color: C.muted, width: 34 },
+  text: { fontSize: 16, fontWeight: "600", color: C.ink },
 });

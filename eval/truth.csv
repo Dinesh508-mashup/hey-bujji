@@ -1,41 +1,41 @@
 sentence_id,transcript,intent,medicine,time,contact,urgency,symptom,money_sent,language
-s01,Naa BP tablet teesukunna,took_medicine,Amlodipine,,,normal,,false,te
-s02,Amlodipine vesukunna ippude,took_medicine,Amlodipine,,,normal,,false,te
-s03,Maine sugar ki goli le li,took_medicine,Metformin,,,normal,,false,hi
-s04,Morning tablets anni ayipoyayi,took_medicine,all,,,normal,,false,te
-s05,Sugar tablet vesukunna tiffin tarvata,took_medicine,Metformin,,,normal,,false,te
-s06,Maine BP ki dawai le li hai,took_medicine,Amlodipine,,,normal,,false,hi
-s07,Metformin ippude vesukunna,took_medicine,Metformin,,,normal,,false,te
-s08,Subah wali BP ki goli kha li,took_medicine,Amlodipine,,,normal,,false,hi
-s09,Raatri 8 ki sugar tablet gurthu cheyyi,set_reminder,Metformin,20:00,,normal,,false,te
-s10,Saayantram 6 gantalaku BP tablet gurthu cheyyi,set_reminder,Amlodipine,18:00,,normal,,false,te
-s11,Shaam 7 baje dawai yaad dilana,set_reminder,,19:00,,normal,,false,hi
-s12,Udayam 8 gantalaku Amlodipine gurthu cheyyi,set_reminder,Amlodipine,08:00,,normal,,false,te
-s13,Raat 9 baje sugar ki goli yaad dilana,set_reminder,Metformin,21:00,,normal,,false,hi
-s14,Raatri enimidi ki Metformin gurthu cheyyi,set_reminder,Metformin,20:00,,normal,,false,te
-s15,Subah sade aath baje BP ki goli yaad dilana,set_reminder,Amlodipine,08:30,,normal,,false,hi
-s16,Madhyahnam 2 gantalaku sugar tablet gurthu cheyyi,set_reminder,Metformin,14:00,,normal,,false,te
-s17,Abbayiki call cheyyi,call_family,,,Ravi,normal,,false,te
-s18,Ammayi ki phone kalupu,call_family,,,Priya,normal,,false,te
-s19,Ravi ko phone lagao,call_family,,,Ravi,normal,,false,hi
-s20,Babu ki phone cheyyi,call_family,,,Ravi,normal,,false,te
-s21,Beti ko call karo,call_family,,,Priya,normal,,false,hi
-s22,Ravi ki call cheyyi,call_family,,,Ravi,normal,,false,te
-s23,Beta ko phone lagao,call_family,,,Ravi,normal,,false,hi
-s24,Ammayiki phone cheyyi,call_family,,,Priya,normal,,false,te
-s25,Chest lo noppi ga undi,red_flag,,,,urgent,chest_pain,false,te
-s26,Kallu tiruguthunnayi,red_flag,,,,urgent,dizziness,false,te
-s27,Usuru aadatledu,red_flag,,,,urgent,breathlessness,false,te
-s28,Seene mein dard hai,red_flag,,,,urgent,chest_pain,false,hi
-s29,Mujhe chakkar aa raha hai,red_flag,,,,urgent,dizziness,false,hi
-s30,Saans lene mein taklif ho rahi hai,red_flag,,,,urgent,breathlessness,false,hi
-s31,Gunde lo noppi ga undi,red_flag,,,,urgent,chest_pain,false,te
-s32,Tala tiruguthondi,red_flag,,,,urgent,dizziness,false,te
-s33,Bank nundi call OTP adigaru,scam_report,,,,high,,false,te
-s34,Police ani cheppi dabbulu adugutunnaru,scam_report,,,,high,,false,te
-s35,KYC update cheyyamani link pampincharu,scam_report,,,,high,,false,te
-s36,Bank se call aaya OTP maang rahe hain,scam_report,,,,high,,false,hi
-s37,Lottery vachindi ani dabbulu kattamannaru,scam_report,,,,high,,false,te
-s38,Account block avutundi ani message vachindi,scam_report,,,,high,,false,te
-s39,Parcel kosam dabbulu pampamani call vachindi,scam_report,,,,high,,false,te
-s40,OTP ichesanu dabbulu poyayi,scam_report,,,,high,,true,te
+s01,I took my BP tablet,took_medicine,Amlodipine,,,normal,,false,en
+s02,I just took my Amlodipine,took_medicine,Amlodipine,,,normal,,false,en
+s03,I took my sugar tablet,took_medicine,Metformin,,,normal,,false,en
+s04,I have finished all my morning tablets,took_medicine,all,,,normal,,false,en
+s05,I took the sugar tablet after breakfast,took_medicine,Metformin,,,normal,,false,en
+s06,I have taken my blood pressure medicine,took_medicine,Amlodipine,,,normal,,false,en
+s07,I just took Metformin,took_medicine,Metformin,,,normal,,false,en
+s08,I took the morning BP tablet,took_medicine,Amlodipine,,,normal,,false,en
+s09,Remind me to take my sugar tablet at 8 pm,set_reminder,Metformin,20:00,,normal,,false,en
+s10,Remind me about my BP tablet at 6 in the evening,set_reminder,Amlodipine,18:00,,normal,,false,en
+s11,Remind me to take my medicine at 7 pm,set_reminder,,19:00,,normal,,false,en
+s12,Remind me to take Amlodipine at 8 in the morning,set_reminder,Amlodipine,08:00,,normal,,false,en
+s13,Remind me about my sugar tablet at 9 at night,set_reminder,Metformin,21:00,,normal,,false,en
+s14,Set a reminder for Metformin at 8 pm,set_reminder,Metformin,20:00,,normal,,false,en
+s15,Remind me to take my BP tablet at 8:30 in the morning,set_reminder,Amlodipine,08:30,,normal,,false,en
+s16,Remind me about my sugar tablet at 2 in the afternoon,set_reminder,Metformin,14:00,,normal,,false,en
+s17,Call my son,call_family,,,Ravi,normal,,false,en
+s18,Call my daughter,call_family,,,Priya,normal,,false,en
+s19,Please call Ravi,call_family,,,Ravi,normal,,false,en
+s20,Phone my son,call_family,,,Ravi,normal,,false,en
+s21,Can you call my daughter,call_family,,,Priya,normal,,false,en
+s22,Call Ravi now,call_family,,,Ravi,normal,,false,en
+s23,I want to talk to my son,call_family,,,Ravi,normal,,false,en
+s24,Call Priya,call_family,,,Priya,normal,,false,en
+s25,I have chest pain,red_flag,,,,urgent,chest_pain,false,en
+s26,I feel dizzy,red_flag,,,,urgent,dizziness,false,en
+s27,I can't breathe properly,red_flag,,,,urgent,breathlessness,false,en
+s28,My chest is hurting,red_flag,,,,urgent,chest_pain,false,en
+s29,My head is spinning,red_flag,,,,urgent,dizziness,false,en
+s30,I am having trouble breathing,red_flag,,,,urgent,breathlessness,false,en
+s31,There is a pain in my chest,red_flag,,,,urgent,chest_pain,false,en
+s32,I feel very dizzy and weak,red_flag,,,,urgent,dizziness,false,en
+s33,Someone called from the bank and asked for my OTP,scam_report,,,,high,,false,en
+s34,A man said he is from the police and is asking for money,scam_report,,,,high,,false,en
+s35,They sent me a link to update my KYC,scam_report,,,,high,,false,en
+s36,The bank called and wants my OTP,scam_report,,,,high,,false,en
+s37,They said I won a lottery and asked me to pay a fee,scam_report,,,,high,,false,en
+s38,I got a message saying my account will be blocked,scam_report,,,,high,,false,en
+s39,Someone called asking for money to release a parcel,scam_report,,,,high,,false,en
+s40,I gave the OTP and my money is gone,scam_report,,,,high,,true,en

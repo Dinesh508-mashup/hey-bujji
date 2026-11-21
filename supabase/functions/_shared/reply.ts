@@ -30,8 +30,9 @@ const NATIVE: Record<string, { te: string; hi: string }> = {
 };
 const nat = (name: string, hi: boolean) => NATIVE[name]?.[hi ? "hi" : "te"] ?? name;
 
-export function buildReply(i: Intent, family: Family): Reply {
-  const hi = i.language === "hi";
+/** replyLang forces the reply language (the app's language setting); otherwise follow the speaker. */
+export function buildReply(i: Intent, family: Family, replyLang?: "te" | "hi"): Reply {
+  const hi = replyLang ? replyLang === "hi" : i.language === "hi";
   const lang = hi ? "hi-IN" : "te-IN";
   const med = i.medicine === "all" ? (hi ? "सारी गोलियाँ" : "అన్ని మాత్రలు") : i.medicine ? nat(i.medicine, hi) : (hi ? "दवाई" : "మందు");
   const medEn = i.medicine === "all" ? "all your tablets" : i.medicine ?? "your medicine";

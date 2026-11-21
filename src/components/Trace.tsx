@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { C } from "../lib/theme";
 
 /** Tiny bar chart of a filtered sensor trace. */
-export function Trace({ data, height = 80, color = C.teal }: { data: number[]; height?: number; color?: string }) {
+export function Trace({ data, height = 80, color = C.violet }: { data: number[]; height?: number; color?: string }) {
   if (!data.length) return null;
   const max = Math.max(...data.map(Math.abs)) || 1;
   return (
