@@ -16,6 +16,7 @@ export type Action =
   | { type: "reminder"; time: string; medicine: string | null }
   | { type: "emergency"; number: "108" }
   | { type: "dial"; number: "1930"; reason: string }
+  | { type: "video"; name: string; phone: string }
   | { type: "order"; items: string[]; order_id?: string }
   | { type: "cab"; destination: string; ride?: Ride; order_id?: string }
   | { type: "none" };
@@ -115,6 +116,10 @@ export function actionFor(i: Intent, family: Family): Action {
   if (i.intent === "set_reminder" && i.time) return { type: "reminder", time: i.time, medicine: i.medicine };
   if (i.intent === "red_flag") return { type: "emergency", number: "108" };
   if (i.intent === "scam_report" && i.money_sent) return { type: "dial", number: "1930", reason: "money already sent" };
+  if (i.intent === "video_call") {
+    const c = family.contacts.find((x) => x.name === i.contact) ?? family.contacts.find((x) => x.relation === "son");
+    if (c) return { type: "video", name: c.name, phone: c.phone };
+  }
   if (i.intent === "order_food" && (i.items ?? []).length) return { type: "order", items: i.items! };
   if (i.intent === "book_cab") return { type: "cab", destination: i.destination ?? "Destination" };
   return { type: "none" };

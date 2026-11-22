@@ -11,28 +11,29 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export type IconName = ComponentProps<typeof Ionicons>["name"];
 
 export const S = {
-  ink: "#141414",
-  muted: "#7A7A80",
-  faint: "#B9B9C0",
+  ink: "#1A1A1A",
+  muted: "#8A847D",
+  faint: "#C4BDB5",
   card: "#FFFFFF",
-  page: "#FFFFFF",
-  black: "#140A0A",
-  // header gradients
-  bloom: ["#D9C9F2", "#F2CFE3", "#FBE4EC", "#FFFFFF"] as const,
-  mint: ["#BFE3D2", "#DCEFE6", "#F1F8F4", "#FFFFFF"] as const,
-  dawn: ["#FBD3B0", "#FCE3D3", "#FFF3EA", "#FFFFFF"] as const,
-  sea: ["#BFE0F5", "#D9EEF7", "#F0F8FB", "#FFFFFF"] as const,
-  dusk: ["#CFC4F4", "#E3DAF8", "#F3EFFC", "#FFFFFF"] as const,
-  // icon tints
-  peach: ["#FFD3A8", "#F7A35C"] as const,
-  sage: ["#D8EBDD", "#9CC8A8"] as const,
-  lilac: ["#E4DCFA", "#B3A2F0"] as const,
-  sky: ["#D4ECFA", "#86C3EC"] as const,
+  page: "#F6F3EF",
+  black: "#121212",
+  orange: "#F26A1B",
+  // header gradients: one warm orange family (names kept so every screen follows)
+  bloom: ["#F2621A", "#F58340", "#F9B588", "#F6F3EF"] as const,
+  mint: ["#EE6A24", "#F38B4E", "#F8BC93", "#F6F3EF"] as const,
+  dawn: ["#F46B17", "#F7903F", "#FBC08F", "#F6F3EF"] as const,
+  sea: ["#EC6420", "#F2864A", "#F7B68E", "#F6F3EF"] as const,
+  dusk: ["#F0621F", "#F48548", "#F9B791", "#F6F3EF"] as const,
+  // icon tints (orange, olive, pink, blue)
+  peach: ["#FFB27E", "#F26A1B"] as const,
+  sage: ["#FFC08F", "#E0661F"] as const,
+  lilac: ["#FFB98A", "#C9480F"] as const,
+  sky: ["#FFD3A8", "#F28A1F"] as const,
 };
 
 export const softShadow: ViewStyle = {
-  shadowColor: "#5B4A7A",
-  shadowOpacity: 0.08,
+  shadowColor: "#3A2A1A",
+  shadowOpacity: 0.06,
   shadowRadius: 18,
   shadowOffset: { width: 0, height: 6 },
   elevation: 3,
@@ -42,20 +43,14 @@ function tap() {
   Haptics.selectionAsync().catch(() => {});
 }
 
-/** Gradient wash + translucent petals behind the top of a screen. */
+/** Orange header wash with two thin white arcs (the "energy" sweep) that fades into the page. */
 export function PetalBackdrop({ colors, height = 420 }: { colors: readonly [string, string, ...string[]]; height?: number }) {
-  const petals = [-60, -30, 0, 30, 60];
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { height }]}>
-      <LinearGradient colors={colors} locations={[0, 0.45, 0.75, 1]} style={StyleSheet.absoluteFill} />
-      <View style={b.bloom}>
-        {petals.map((deg) => (
-          <View key={deg} style={[b.petal, { transform: [{ rotate: `${deg}deg` }, { translateY: -70 }] }]} />
-        ))}
-        {[-90, 90].map((deg) => (
-          <View key={deg} style={[b.petal, b.side, { transform: [{ rotate: `${deg}deg` }, { translateY: -90 }] }]} />
-        ))}
-      </View>
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { height, overflow: "hidden" }]}>
+      <LinearGradient colors={colors} locations={[0, 0.5, 0.8, 1]} style={StyleSheet.absoluteFill} />
+      <View style={[b.arc, { width: 520, height: 520, borderRadius: 260, right: -300, top: -180 }]} />
+      <View style={[b.arc, { width: 380, height: 380, borderRadius: 190, right: -250, top: -40, opacity: 0.6 }]} />
+      <LinearGradient colors={["rgba(255,255,255,0.28)", "rgba(255,255,255,0)"]} start={{ x: 1, y: 0 }} end={{ x: 0.4, y: 0.5 }} style={StyleSheet.absoluteFill} />
     </View>
   );
 }
@@ -65,7 +60,7 @@ export function GlassButton({ icon, onPress, label }: { icon: IconName; onPress:
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { tap(); onPress(); }}
       style={({ pressed }) => [b.glass, { opacity: pressed ? 0.7 : 1 }]}>
-      <Ionicons name={icon} size={20} color={S.ink} />
+      <Ionicons name={icon} size={20} color="#fff" />
     </Pressable>
   );
 }
@@ -74,7 +69,7 @@ export function GlassButton({ icon, onPress, label }: { icon: IconName; onPress:
 export function HeroBadge({ icon }: { icon: IconName }) {
   return (
     <View style={b.badge}>
-      <Ionicons name={icon} size={22} color={S.ink} />
+      <Ionicons name={icon} size={22} color={S.orange} />
     </View>
   );
 }
@@ -172,7 +167,7 @@ const TABS: Tab[] = [
   { icon: "trophy-outline", iconOn: "trophy", label: "Results", href: "/results" },
 ];
 
-/** Floating white capsule tab bar with labels; "Talk" is the big centre button. */
+/** Floating black capsule tab bar; "Talk" is the glowing orange pill in the centre. */
 export function FloatingTabBar({ active }: { active: string }) {
   const insets = useSafeAreaInsets();
   return (
@@ -183,17 +178,17 @@ export function FloatingTabBar({ active }: { active: string }) {
           return (
             <Pressable key={t.href} accessibilityRole="tab" accessibilityLabel={t.label} accessibilityState={{ selected: on }}
               onPress={() => { tap(); if (!on) router.navigate(t.href as never); }}
-              style={b.tab}>
+              style={t.center ? b.talkTap : b.tab}>
               {t.center ? (
-                <LinearGradient colors={["#F7A35C", "#E5767A"]} style={b.talk}>
-                  <Ionicons name={t.iconOn} size={26} color="#fff" />
+                <LinearGradient colors={["#FF8A3D", "#F2621A"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={b.talk}>
+                  <Ionicons name={t.iconOn} size={24} color="#fff" />
                 </LinearGradient>
               ) : (
-                <View style={[b.tabIcon, on ? b.tabOn : null]}>
-                  <Ionicons name={on ? t.iconOn : t.icon} size={21} color={on ? "#fff" : "#6E6E76"} />
-                </View>
+                <>
+                  <Ionicons name={on ? t.iconOn : t.icon} size={22} color={on ? "#fff" : "#8C8C8C"} />
+                  <Text style={[b.tabLabel, on ? { color: "#fff", fontWeight: "700" } : null]}>{t.label}</Text>
+                </>
               )}
-              <Text style={[b.tabLabel, on || t.center ? { color: S.ink, fontWeight: "700" } : null]}>{t.label}</Text>
             </Pressable>
           );
         })}
@@ -203,24 +198,19 @@ export function FloatingTabBar({ active }: { active: string }) {
 }
 
 const b = StyleSheet.create({
-  bloom: { position: "absolute", top: 70, left: 0, right: 0, alignItems: "center" },
-  petal: {
-    position: "absolute", width: 110, height: 170, borderRadius: 80,
-    backgroundColor: "rgba(255,255,255,0.28)", borderWidth: 1, borderColor: "rgba(255,255,255,0.45)",
-  },
-  side: { width: 120, height: 150, backgroundColor: "rgba(255,255,255,0.18)" },
+  arc: { position: "absolute", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.45)" },
   glass: {
-    width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.8)",
+    width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.22)", borderWidth: 1, borderColor: "rgba(255,255,255,0.35)",
   },
   badge: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", ...softShadow,
   },
-  eyebrow: { fontSize: 13, color: "#55555C", marginTop: 16 },
-  title: { fontSize: 34, lineHeight: 40, fontWeight: "500", color: S.ink, textAlign: "center", marginTop: 6, letterSpacing: -0.6 },
-  card: { backgroundColor: S.card, borderRadius: 22, padding: 16, ...softShadow },
+  eyebrow: { fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 16 },
+  title: { fontSize: 34, lineHeight: 40, fontWeight: "600", color: "#fff", textAlign: "center", marginTop: 6, letterSpacing: -0.8 },
+  card: { backgroundColor: S.card, borderRadius: 24, padding: 16, ...softShadow },
   section: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: S.ink },
+  sectionTitle: { fontSize: 18, fontWeight: "700", color: S.ink, letterSpacing: -0.3 },
   sectionAction: { fontSize: 13, color: S.muted },
   chip: {
     flexDirection: "row", alignItems: "center", gap: 8, flex: 1, minWidth: "45%",
@@ -232,16 +222,18 @@ const b = StyleSheet.create({
   selectSub: { fontSize: 13, color: S.muted, marginTop: 2 },
   check: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: S.ink, alignItems: "center", justifyContent: "center" },
   checkOn: { backgroundColor: S.ink },
-  pill: { backgroundColor: S.black, borderRadius: 999, paddingVertical: 18, alignItems: "center", justifyContent: "center" },
+  pill: { backgroundColor: S.orange, borderRadius: 999, paddingVertical: 18, alignItems: "center", justifyContent: "center" },
   pillText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   tabWrap: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   tabBar: {
-    flexDirection: "row", gap: 2, backgroundColor: "#fff", borderRadius: 30, paddingHorizontal: 8, paddingTop: 6, paddingBottom: 6, alignItems: "flex-end",
-    shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 8,
+    flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#121212", borderRadius: 34, paddingHorizontal: 10, paddingVertical: 8,
+    shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 10,
   },
-  tab: { width: 62, alignItems: "center", justifyContent: "flex-end" },
+  tab: { width: 58, height: 52, alignItems: "center", justifyContent: "center" },
   tabIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   tabOn: { backgroundColor: S.black },
-  talk: { width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center", marginTop: -22, borderWidth: 4, borderColor: "#fff" },
-  tabLabel: { fontSize: 11, color: "#6E6E76", marginTop: 2 },
+  talkTap: { paddingHorizontal: 4 },
+  talk: { width: 74, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center",
+    shadowColor: "#F26A1B", shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
+  tabLabel: { fontSize: 10, color: "#8C8C8C", marginTop: 3 },
 });

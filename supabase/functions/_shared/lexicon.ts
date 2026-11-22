@@ -105,7 +105,7 @@ export const DEMO_FAMILY: Family = {
     { name: "Metformin", purpose: "sugar", variants: ["glycomet"] },
   ],
   contacts: [
-    { name: "Ravi", relation: "son", phone: "+919000000001", nicknames: ["ravi", "abbayi", "abbai", "babu", "koduku", "beta", "bete", "son", "kodukku"] },
+    { name: "Ravi", relation: "son", phone: "+919000000001", nicknames: ["ravi", "abbayi", "abbai", "babu", "koduku", "beta", "bete", "son", "kodukku", "kumar", "ravi kumar", "sun", "my son"] },
     { name: "Priya", relation: "daughter", phone: "+919000000002", nicknames: ["priya", "ammayi", "ammai", "kuthuru", "kooturu", "beti", "bitiya", "daughter"] },
   ],
 };

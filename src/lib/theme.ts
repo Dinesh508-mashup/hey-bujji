@@ -1,29 +1,30 @@
-// Soft pastel palette (white page, near-black ink, pastel tints).
+// Warm orange health palette (off-white page, white cards, near-black ink, orange accent).
 // Key names are kept from the original theme so every screen picks the new look up.
 export const C = {
-  bg: "#FFFFFF",
+  // Warm health-app system: warm off-white page, white cards, near-black ink, one orange accent.
+  bg: "#F6F3EF",
   card: "#FFFFFF",
-  ink: "#141414",
-  muted: "#7A7A80",
-  line: "#EEEEF2",
-  field: "#F6F6F9",
-  teal: "#140A0A", // primary action: black pill
-  tealSoft: "#E6F4EE", // mint
-  marigold: "#F2A65A",
-  marigoldSoft: "#FFF1E3", // peach
+  ink: "#1A1A1A",
+  muted: "#8A847D",
+  line: "#EEE8E1",
+  field: "#F3EEE8",
+  teal: "#F26A1B", // primary action: orange pill
+  tealSoft: "#FFF0E6",
+  marigold: "#F26A1B",
+  marigoldSoft: "#FFF0E6",
   red: "#E5484D",
   redSoft: "#FDECEC",
-  green: "#3FA36B",
-  greenSoft: "#E7F6EE",
-  violet: "#9B87E8",
-  violetSoft: "#F0ECFC",
-  sky: "#5FB3E6",
-  skySoft: "#E6F3FB",
+  green: "#D9541A", // "done" states use the deep orange
+  greenSoft: "#FFF0E6",
+  violet: "#C9480F",
+  violetSoft: "#FFF0E6",
+  sky: "#F28A1F",
+  skySoft: "#FFF4EA",
 };
 
 export const shadow = {
-  shadowColor: "#5B4A7A",
-  shadowOpacity: 0.08,
+  shadowColor: "#3A2A1A",
+  shadowOpacity: 0.06,
   shadowRadius: 18,
   shadowOffset: { width: 0, height: 6 },
   elevation: 3,

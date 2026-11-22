@@ -8,11 +8,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { S, softShadow } from "./soft";
 
 export const CHECK_ART = {
-  breathing: { img: require("../../assets/checks/lungs.png"), point: { x: 0.5, y: 0.55 }, tint: ["#FFE9F0", "#FFF6F9"], dot: "#E5767A" },
-  heart: { img: require("../../assets/checks/heart.png"), point: { x: 0.42, y: 0.58 }, tint: ["#FFE3E6", "#FFF5F6"], dot: "#E5484D" },
+  breathing: { img: require("../../assets/checks/lungs.png"), point: { x: 0.5, y: 0.55 }, tint: ["#FFE7D6", "#FFF6EF"], dot: "#F26A1B" },
+  heart: { img: require("../../assets/checks/heart.png"), point: { x: 0.42, y: 0.58 }, tint: ["#FFE1CF", "#FFF4EC"], dot: "#E5484D" },
   chair_stand: { img: require("../../assets/checks/chair.png"), point: { x: 0.5, y: 0.5 }, tint: ["#FCEBDD", "#FFF7F0"], dot: "#E08A3C" },
-  memory: { img: require("../../assets/checks/brain.png"), point: { x: 0.55, y: 0.4 }, tint: ["#EEE7FB", "#F8F5FE"], dot: "#8E78E0" },
-  scam: { img: require("../../assets/checks/shield.png"), point: { x: 0.5, y: 0.48 }, tint: ["#E3F3EA", "#F4FBF7"], dot: "#3FA36B" },
+  memory: { img: require("../../assets/checks/brain.png"), point: { x: 0.55, y: 0.4 }, tint: ["#FFE9D9", "#FFF7F1"], dot: "#D9541A" },
+  scam: { img: require("../../assets/checks/shield.png"), point: { x: 0.5, y: 0.48 }, tint: ["#FFEEDF", "#FFF8F2"], dot: "#F26A1B" },
 } satisfies Record<string, { img: ImageSourcePropType; point: { x: number; y: number }; tint: readonly [string, string]; dot: string }>;
 
 export type CheckArtKey = keyof typeof CHECK_ART;
@@ -68,7 +68,7 @@ const st = StyleSheet.create({
 // big blinking circle where the phone goes: middle of the chest for breathing, over the
 // heart (her left side, the right side of the picture) for heart rate.
 
-const CHEST = require("../../assets/checks/chest.png");
+const CHEST = require("../../assets/checks/chest_clean.png"); // labels removed (see CREDITS.md)
 const CHEST_POINT = { breathing: { x: 0.5, y: 0.55 }, heart: { x: 0.6, y: 0.68 } } as const;
 
 export function ChestGuide({ spot, caption, big, bigLabel }: {
@@ -79,7 +79,7 @@ export function ChestGuide({ spot, caption, big, bigLabel }: {
   const DOT = 26;
   return (
     <View style={cg.wrap} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
-      <Image source={CHEST} style={{ width: "100%", aspectRatio: 1 }} resizeMode="contain" accessibilityLabel="Chest picture showing where to place the phone" />
+      <Image source={CHEST} style={{ width: "100%", aspectRatio: 447 / 402 }} resizeMode="contain" accessibilityLabel="Chest picture showing where to place the phone" />
       {w ? (
         <View style={{ position: "absolute", left: p.x * w - DOT / 2, top: p.y * w - DOT / 2 }}>
           <BlinkPoint color={spot === "heart" ? "#E5484D" : "#7B61C9"} size={DOT} />
@@ -89,7 +89,7 @@ export function ChestGuide({ spot, caption, big, bigLabel }: {
         <View style={cg.big}><Text style={cg.bigNum}>{big}</Text>{bigLabel ? <Text style={cg.bigLabel}>{bigLabel}</Text> : null}</View>
       ) : null}
       {caption ? <View style={cg.caption}><Text style={cg.captionText}>{caption}</Text></View> : null}
-      <Text style={cg.credit}>Image: Blausen Medical, CC BY 3.0</Text>
+      <Text style={cg.credit}>Image: Blausen Medical, CC BY 3.0 (labels removed)</Text>
     </View>
   );
 }

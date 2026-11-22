@@ -5,6 +5,7 @@ import { Platform, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { DashShell, dashShadow, useDashSize } from "../components/DashShell";
+import { Disclaimer, Screen } from "../components/ui";
 import { D } from "../components/DashArt";
 import evalJson from "../../data/eval-results.json";
 import sensorJson from "../../data/sensor-results.json";
@@ -49,6 +50,90 @@ function fmt(v: number | null | undefined, key: string) {
 }
 
 export default function Results() {
+  // Amma's phone gets its own simple, on-theme version with the tab bar; the laptop keeps the dashboard.
+  if (Platform.OS !== "web") return <PhoneResults />;
+  return <DashResults />;
+}
+
+/** Phone: big, plain-language comparison. Only measured numbers; dashes until the test has run. */
+function PhoneResults() {
+  const measured = R.status === "measured" && !!R.pipelines;
+  const P = (p: string) => (measured ? R.pipelines![p] : undefined);
+  const b = P("bujji")?.task_success ?? null, w = P("baseline")?.task_success ?? null;
+  const meaning = measured && b !== null && w !== null
+    ? `Out of ${R.clips} spoken requests, Hey Bujji got ${b}% fully right (action, medicine, time and person). Whisper got ${w}%.${R.synthetic ? " Tested with computer voices, not real people." : ""}`
+    : "No test has been run yet, so there are no numbers. Run the 40-sentence test on the laptop and the results appear here automatically.";
+  const rows: [string, string][] = [["baseline", "Whisper"], ["indic_raw", "Indian speech model"], ["bujji", "Hey Bujji"]];
+  const fields: [keyof PipelineSummary, string][] = [["medicine", "Medicine names"], ["time", "Reminder times"], ["contact", "Right person"]];
+  return (
+    <Screen title="Accuracy" eyebrow="Does Bujji understand Amma?" icon="trophy" tint="bloom" tab="/results" back={false}>
+      <View style={ps.card}>
+        <View style={ps.statusRow}>
+          <View style={[ps.statusIcon, { backgroundColor: measured ? "#FFF0E6" : "#F3EEE8" }]}>
+            <Ionicons name={measured ? "checkmark-circle" : "time-outline"} size={22} color={measured ? "#F26A1B" : "#8A847D"} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={ps.statusTitle}>{measured ? `Measured on ${R.clips} clips` : "Not measured yet"}</Text>
+            <Text style={ps.muted}>{measured ? `${R.speakers?.length ?? 0} ${R.synthetic ? "computer voices" : "speakers"} · 40 test sentences` : "Numbers appear only after the real test runs."}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={ps.card}>
+        <Text style={ps.h}>Who understood Amma best?</Text>
+        <Text style={ps.muted}>Requests where everything was right</Text>
+        {rows.map(([k, name]) => {
+          const v = P(k)?.task_success ?? null;
+          const hero = k === "bujji";
+          return (
+            <View key={k} style={{ marginTop: 14 }}>
+              <View style={ps.barHead}>
+                <Text style={[ps.barName, hero && { color: "#F26A1B" }]}>{name}</Text>
+                <Text style={[ps.barVal, hero && { color: "#F26A1B" }]}>{v === null ? "—" : `${v}%`}</Text>
+              </View>
+              <View style={ps.track}>
+                {v !== null ? <LinearGradient colors={hero ? ["#FF8A3D", "#F2621A"] : ["#CFC8C0", "#B5ADA4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[ps.fill, { width: `${v}%` }]} /> : null}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={[ps.card, { backgroundColor: "#1A1A1A" }]}>
+        <Text style={[ps.h, { color: "#fff" }]}>What this means</Text>
+        <Text style={[ps.body, { color: "rgba(255,255,255,0.85)" }]}>{meaning}</Text>
+      </View>
+
+      <View style={ps.card}>
+        <Text style={ps.h}>Details</Text>
+        {fields.map(([f, label]) => (
+          <View key={f} style={ps.detailRow}>
+            <Text style={ps.detailLabel}>{label}</Text>
+            <Text style={ps.detailVal}>Whisper {fmt(P("baseline")?.[f] as number | null | undefined, f)}</Text>
+            <Text style={[ps.detailVal, { color: "#F26A1B", fontWeight: "800" }]}>Bujji {fmt(P("bujji")?.[f] as number | null | undefined, f)}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={ps.card}>
+        <Text style={ps.h}>Phone sensor checks</Text>
+        {([["breathing", "Breathing count", "breaths"], ["chair_stand", "Chair stand count", "stands"]] as const).map(([k, label, unit]) => {
+          const st = S[k];
+          return (
+            <View key={k} style={ps.detailRow}>
+              <Text style={ps.detailLabel}>{label}</Text>
+              <Text style={ps.detailVal}>{st ? `±${st.mean_abs_error} ${unit} · ${st.within_tolerance_pct}% close` : "Not measured yet"}</Text>
+            </View>
+          );
+        })}
+        <Text style={[ps.muted, { marginTop: 8 }]}>Compared with a helper counting by hand at the same time.</Text>
+      </View>
+      <Disclaimer />
+    </Screen>
+  );
+}
+
+function DashResults() {
   const { mid } = useDashSize();
   const measured = R.status === "measured" && !!R.pipelines;
   const cols = measured ? ORDER.filter((p) => R.pipelines![p]) : ["baseline", "indic_raw", "bujji"];
@@ -322,4 +407,22 @@ const s = StyleSheet.create({
   fail: { paddingVertical: 10 },
   blob: { position: "absolute", right: -26, top: 26, width: 110, height: 110, borderRadius: 55, alignItems: "center", justifyContent: "center" },
   sensorVal: { fontSize: 26, fontWeight: "300", color: D.ink },
+});
+
+const ps = StyleSheet.create({
+  card: { backgroundColor: "#fff", borderRadius: 24, padding: 18, marginBottom: 14, shadowColor: "#3A2A1A", shadowOpacity: 0.06, shadowRadius: 18, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  statusIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  statusTitle: { fontSize: 18, fontWeight: "700", color: "#1A1A1A" },
+  h: { fontSize: 18, fontWeight: "700", color: "#1A1A1A", letterSpacing: -0.3 },
+  body: { fontSize: 16, lineHeight: 24, marginTop: 6 },
+  muted: { fontSize: 13, color: "#8A847D", marginTop: 2 },
+  barHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 },
+  barName: { fontSize: 15, fontWeight: "600", color: "#1A1A1A" },
+  barVal: { fontSize: 22, fontWeight: "800", color: "#1A1A1A" },
+  track: { height: 14, borderRadius: 7, backgroundColor: "#F3EEE8", overflow: "hidden" },
+  fill: { height: 14, borderRadius: 7 },
+  detailRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#F0EAE3" },
+  detailLabel: { flex: 1, fontSize: 14, color: "#1A1A1A", fontWeight: "600" },
+  detailVal: { fontSize: 13, color: "#8A847D" },
 });

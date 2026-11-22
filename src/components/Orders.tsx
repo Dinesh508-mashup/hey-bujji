@@ -43,6 +43,36 @@ export async function decideOrder(o: Order, approve: boolean) {
     `Ravi ${approve ? "approved" : "rejected"} Amma's order: ${o.items.join(", ")}${approve ? " (demo cart, not placed)" : ""}`, "normal", { order_id: o.id });
 }
 
+/** Close an order or ride: Amma ("Got it", "I've reached") or Ravi ("Mark delivered/completed"). */
+export async function completeOrder(o: Order, by: "Amma" | "Ravi") {
+  const at = new Date().toISOString();
+  const { error } = await supabase.from("orders").update({ status: "completed", details: { ...o.details, completed_at: at, completed_by: by } }).eq("id", o.id);
+  if (error) throw new Error(error.message);
+  await logEvent(o.kind === "cab" ? "cab_completed" : "order_completed",
+    o.kind === "cab" ? `Amma's cab to ${o.destination} is complete (${by === "Amma" ? "she reached" : "marked by Ravi"})` : `Amma's order is complete: ${o.items.join(", ")} (${by === "Amma" ? "she got it" : "marked by Ravi"})`,
+    "normal", { order_id: o.id, by });
+}
+
+const MIN = 60_000;
+/** Open orders close themselves: food 45 min after approval, rides 30 min after the expected arrival. */
+export function isClosed(o: Order, now = Date.now()) {
+  if (o.status === "completed" || o.status === "rejected" || o.status === "cancelled") return true;
+  if (o.kind === "food" && o.status === "approved" && o.decided_at) return now - new Date(o.decided_at).getTime() > 45 * MIN;
+  if (o.kind === "cab" && o.status === "assigned") {
+    const eta = Number((o.details as { eta_min?: number }).eta_min ?? 10);
+    return now - new Date(o.created_at).getTime() > (eta + 30) * MIN;
+  }
+  return false;
+}
+/** When it closed (for "Completed at …" and for hiding it after 30 min). */
+export function closedAt(o: Order): number {
+  const d = o.details as { completed_at?: string; eta_min?: number };
+  if (d.completed_at) return new Date(d.completed_at).getTime();
+  if (o.status === "rejected" && o.decided_at) return new Date(o.decided_at).getTime();
+  if (o.kind === "food" && o.decided_at) return new Date(o.decided_at).getTime() + 45 * MIN;
+  return new Date(o.created_at).getTime() + ((d.eta_min ?? 10) + 30) * MIN;
+}
+
 const say = (otp: string) => otp.split("").join(" ");
 
 // ---------------------------------------------------------------------------------- phone
@@ -52,7 +82,8 @@ export function FoodOrderCard({ orderId, items }: { orderId?: string; items: str
   const { t, voice } = useLang();
   const orders = useOrders();
   const o = orders.find((x) => x.id === orderId);
-  const status = o?.status ?? "pending";
+  const closed = o ? isClosed(o) && o.status !== "rejected" : false;
+  const status = closed ? "completed" : o?.status ?? "pending";
   const spoken = useRef<string | null>(null);
   useEffect(() => {
     if (status === "pending" || spoken.current === status) return;
@@ -66,14 +97,21 @@ export function FoodOrderCard({ orderId, items }: { orderId?: string; items: str
     <View style={st.card}>
       <View style={st.head}><Ionicons name="basket" size={20} color="#E07A2E" /><Text style={st.headText}>{t({ en: "Your cart", te: "మీ కార్ట్", hi: "आपकी कार्ट" })}</Text><Text style={st.tag}>Demo cart</Text></View>
       {items.map((it) => <Text key={it} style={st.item}>• {it}</Text>)}
-      <View style={[st.status, status === "approved" ? st.ok : status === "rejected" ? st.no : st.wait]}>
-        <Ionicons name={status === "approved" ? "checkmark-circle" : status === "rejected" ? "close-circle" : "time"} size={18} color={status === "approved" ? "#2E7A50" : status === "rejected" ? "#B3261E" : "#8A5212"} />
+      <View style={[st.status, status === "approved" || status === "completed" ? st.ok : status === "rejected" ? st.no : st.wait]}>
+        <Ionicons name={status === "approved" || status === "completed" ? "checkmark-circle" : status === "rejected" ? "close-circle" : "time"} size={18} color={status === "approved" ? "#C9480F" : status === "rejected" ? "#B3261E" : "#8A5212"} />
         <Text style={st.statusText}>
-          {status === "approved" ? t({ en: "Ravi approved ✓ (demo, not placed)", te: "రవి ఒప్పుకున్నారు ✓ (డెమో)", hi: "रवि ने मंज़ूर किया ✓ (डेमो)" })
+          {status === "completed" ? t({ en: "Completed ✓", te: "పూర్తయింది ✓", hi: "पूरा हुआ ✓" })
+            : status === "approved" ? t({ en: "Ravi approved ✓ · on the way (demo)", te: "రవి ఒప్పుకున్నారు ✓ · వస్తోంది (డెమో)", hi: "रवि ने मंज़ूर किया ✓ · आ रहा है (डेमो)" })
             : status === "rejected" ? t({ en: "Ravi said not now", te: "రవి వద్దన్నారు", hi: "रवि ने मना किया" })
             : t({ en: "Waiting for Ravi to approve…", te: "రవి ఒప్పుకోవాలి…", hi: "रवि की मंज़ूरी का इंतज़ार…" })}
         </Text>
       </View>
+      {o && status === "approved" ? (
+        <Pressable onPress={() => completeOrder(o, "Amma").catch(() => {})} style={({ pressed }) => [st.doneBtn, pressed && { opacity: 0.85 }]}>
+          <Ionicons name="checkmark-done" size={20} color="#fff" />
+          <Text style={st.doneBtnText}>{t({ en: "Got it ✓", te: "అందింది ✓", hi: "मिल गया ✓" })}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -89,9 +127,12 @@ function rideLinks(destination: string, from: { latitude: number; longitude: num
 }
 
 /** Ride card on Amma's phone: driver, car, OTP read aloud, pickup from GPS, buttons to the real apps. */
-export function RideCard({ ride, destination }: { ride: Ride; destination: string }) {
+export function RideCard({ ride, destination, orderId }: { ride: Ride; destination: string; orderId?: string }) {
   const { t, voice } = useLang();
   const [here, setHere] = useState<{ latitude: number; longitude: number } | null>(null);
+  const orders = useOrders();
+  const order = orders.find((x) => x.id === orderId);
+  const done = order ? isClosed(order) : false;
   const [pickup, setPickup] = useState<string | null>(null);
 
   useEffect(() => {
@@ -114,7 +155,7 @@ export function RideCard({ ride, destination }: { ride: Ride; destination: strin
 
   return (
     <View style={st.card}>
-      <View style={st.head}><Ionicons name="car" size={20} color="#3B6FD8" /><Text style={st.headText}>{t({ en: "Cab to", te: "క్యాబ్", hi: "कैब" })} {destination}</Text><Text style={st.tag}>Simulated</Text></View>
+      <View style={st.head}><Ionicons name="car" size={20} color="#F26A1B" /><Text style={st.headText}>{t({ en: "Cab to", te: "క్యాబ్", hi: "कैब" })} {destination}</Text><Text style={st.tag}>Simulated</Text></View>
       <View style={st.driverRow}>
         <View style={st.avatar}><Text style={{ fontSize: 26 }}>🧑🏽‍✈️</Text></View>
         <View style={{ flex: 1 }}>
@@ -137,6 +178,16 @@ export function RideCard({ ride, destination }: { ride: Ride; destination: strin
           </Pressable>
         ))}
       </View>
+      {order ? (
+        done ? (
+          <View style={[st.status, st.ok]}><Ionicons name="checkmark-circle" size={18} color="#C9480F" /><Text style={st.statusText}>{t({ en: "Ride completed ✓", te: "ప్రయాణం పూర్తయింది ✓", hi: "सफ़र पूरा ✓" })}</Text></View>
+        ) : (
+          <Pressable onPress={() => completeOrder(order, "Amma").catch(() => {})} style={({ pressed }) => [st.doneBtn, pressed && { opacity: 0.85 }]}>
+            <Ionicons name="flag" size={20} color="#fff" />
+            <Text style={st.doneBtnText}>{t({ en: "I've reached ✓", te: "చేరుకున్నాను ✓", hi: "पहुँच गई ✓" })}</Text>
+          </Pressable>
+        )
+      ) : null}
     </View>
   );
 }
@@ -147,15 +198,19 @@ export function RideCard({ ride, destination }: { ride: Ride; destination: strin
 export function OrdersStrip({ parent }: { parent: string }) {
   const orders = useOrders();
   const [busy, setBusy] = useState<string | null>(null);
-  const pending = orders.filter((o) => o.kind === "food" && o.status === "pending");
-  const rides = orders.filter((o) => o.kind === "cab" && o.status === "assigned").slice(0, 1);
-  const recent = orders.filter((o) => o.kind === "food" && o.status !== "pending").slice(0, 1);
-  if (!pending.length && !rides.length && !recent.length) return null;
-  const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(id); }, []);
+  const open = orders.filter((o) => !isClosed(o, now));
+  const pending = open.filter((o) => o.kind === "food" && o.status === "pending");
+  const onTheWay = open.filter((o) => o.kind === "food" && o.status === "approved");
+  const rides = open.filter((o) => o.kind === "cab").slice(0, 1);
+  const justClosed = orders.filter((o) => isClosed(o, now) && now - closedAt(o) < 30 * MIN).slice(0, 2);
+  if (!pending.length && !onTheWay.length && !rides.length && !justClosed.length) return null;
+  const hm = (t: string | number) => new Date(t).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
 
-  async function decide(o: Order, ok: boolean) {
+  async function act(o: Order, fn: () => Promise<void>) {
     setBusy(o.id);
-    try { await decideOrder(o, ok); } catch (e) { console.warn(e); } finally { setBusy(null); }
+    try { await fn(); } catch (e) { console.warn(e); } finally { setBusy(null); }
   }
 
   return (
@@ -167,26 +222,41 @@ export function OrdersStrip({ parent }: { parent: string }) {
             <Text style={ds.title}>{parent} wants to order: {o.items.join(", ")}</Text>
             <Text style={ds.sub}>{hm(o.created_at)}{o.said ? ` · said “${o.said}”` : ""} · demo cart, nothing is ordered</Text>
           </View>
-          <Pressable disabled={busy === o.id} onPress={() => decide(o, false)} style={[ds.btn, { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E1EA" }]}><Text style={[ds.btnText, { color: "#141414" }]}>Reject</Text></Pressable>
-          <Pressable disabled={busy === o.id} onPress={() => decide(o, true)} style={[ds.btn, { backgroundColor: "#141414" }]}><Text style={ds.btnText}>Approve</Text></Pressable>
+          <Pressable disabled={busy === o.id} onPress={() => act(o, () => decideOrder(o, false))} style={[ds.btn, { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E1EA" }]}><Text style={[ds.btnText, { color: "#141414" }]}>Reject</Text></Pressable>
+          <Pressable disabled={busy === o.id} onPress={() => act(o, () => decideOrder(o, true))} style={[ds.btn, { backgroundColor: "#141414" }]}><Text style={ds.btnText}>Approve</Text></Pressable>
+        </View>
+      ))}
+      {onTheWay.map((o) => (
+        <View key={o.id} style={[ds.box, { borderColor: "#F6C48E" }]}>
+          <Ionicons name="bicycle" size={22} color="#E07A2E" />
+          <View style={{ flex: 1 }}>
+            <Text style={ds.title}>On the way to {parent}: {o.items.join(", ")}</Text>
+            <Text style={ds.sub}>Approved {o.decided_at ? hm(o.decided_at) : ""} · closes when {parent} taps “Got it”, or after 45 min · demo cart</Text>
+          </View>
+          <Pressable disabled={busy === o.id} onPress={() => act(o, () => completeOrder(o, "Ravi"))} style={[ds.btn, { backgroundColor: "#141414" }]}><Text style={ds.btnText}>Mark delivered</Text></Pressable>
         </View>
       ))}
       {rides.map((o) => {
         const r = o.details as unknown as Ride;
         return (
-          <View key={o.id} style={[ds.box, { borderColor: "#C9D8F6", backgroundColor: "#F4F8FF" }]}>
-            <Ionicons name="car" size={22} color="#3B6FD8" />
+          <View key={o.id} style={[ds.box, { borderColor: "#F6C48E" }]}>
+            <Ionicons name="car" size={22} color="#E07A2E" />
             <View style={{ flex: 1 }}>
               <Text style={ds.title}>{parent}’s cab to {o.destination} · {r.driver} ⭐ {r.rating} · {r.car} · {r.plate}</Text>
-              <Text style={ds.sub}>Booked {hm(o.created_at)} · arriving in ~{r.eta_min} min · OTP {r.otp} · simulated booking</Text>
+              <Text style={ds.sub}>Booked {hm(o.created_at)} · arriving in ~{r.eta_min} min · OTP {r.otp} · simulated · closes when {parent} taps “I’ve reached”</Text>
             </View>
+            <Pressable disabled={busy === o.id} onPress={() => act(o, () => completeOrder(o, "Ravi"))} style={[ds.btn, { backgroundColor: "#141414" }]}><Text style={ds.btnText}>Mark completed</Text></Pressable>
           </View>
         );
       })}
-      {recent.map((o) => (
+      {justClosed.map((o) => (
         <View key={o.id} style={[ds.box, { borderColor: "#E5E1EA" }]}>
-          <Ionicons name={o.status === "approved" ? "checkmark-circle" : "close-circle"} size={20} color={o.status === "approved" ? "#3FA36B" : "#B3261E"} />
-          <Text style={[ds.sub, { flex: 1 }]}>You {o.status} {parent}’s order ({o.items.join(", ")}){o.decided_at ? ` at ${hm(o.decided_at)}` : ""}{o.status === "approved" ? " · demo cart, not placed" : ""}</Text>
+          <Ionicons name={o.status === "rejected" ? "close-circle" : "checkmark-circle"} size={20} color={o.status === "rejected" ? "#B3261E" : "#F26A1B"} />
+          <Text style={[ds.sub, { flex: 1, marginTop: 0 }]}>
+            {o.status === "rejected" ? `You rejected ${parent}’s order (${o.items.join(", ")})` : o.kind === "cab" ? `${parent}’s ride to ${o.destination} · completed` : `${parent}’s order (${o.items.join(", ")}) · completed`}
+            {` at ${hm(closedAt(o))}`}
+          </Text>
+          <Text style={ds.closed}>{o.status === "rejected" ? "Closed" : "Completed"}</Text>
         </View>
       ))}
     </View>
@@ -200,23 +270,26 @@ const ds = StyleSheet.create({
   sub: { fontSize: 12, color: "#7A7A80", marginTop: 2 },
   btn: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 },
   btnText: { fontSize: 14, fontWeight: "800", color: "#fff" },
+  closed: { fontSize: 12, fontWeight: "700", color: "#8A847D", backgroundColor: "#F3EEE8", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, overflow: "hidden" },
 });
 
 const st = StyleSheet.create({
-  card: { backgroundColor: "#fff", borderRadius: 22, padding: 16, marginTop: 12, borderWidth: 1, borderColor: "#EFEAF5" },
+  doneBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#F26A1B", borderRadius: 18, paddingVertical: 14, marginTop: 12 },
+  doneBtnText: { fontSize: 17, fontWeight: "800", color: "#fff" },
+  card: { backgroundColor: "#fff", borderRadius: 22, padding: 16, marginTop: 12, borderWidth: 1, borderColor: "#EDE6DE" },
   head: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
   headText: { flex: 1, fontSize: 17, fontWeight: "800", color: "#141414" },
   tag: { fontSize: 11, fontWeight: "700", color: "#7A7A80", backgroundColor: "#F3F1F6", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, overflow: "hidden" },
   item: { fontSize: 17, color: "#141414", marginVertical: 2 },
   status: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 14, padding: 10, marginTop: 10 },
-  wait: { backgroundColor: "#FFF4E5" }, ok: { backgroundColor: "#EAF6EE" }, no: { backgroundColor: "#FDECEA" },
+  wait: { backgroundColor: "#FFF4E5" }, ok: { backgroundColor: "#FFF0E6" }, no: { backgroundColor: "#FDECEA" },
   statusText: { flex: 1, fontSize: 15, fontWeight: "700", color: "#141414" },
   driverRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  avatar: { width: 54, height: 54, borderRadius: 27, backgroundColor: "#E8EEFB", alignItems: "center", justifyContent: "center" },
+  avatar: { width: 54, height: 54, borderRadius: 27, backgroundColor: "#FFF0E6", alignItems: "center", justifyContent: "center" },
   driver: { fontSize: 17, fontWeight: "800", color: "#141414" },
   car: { fontSize: 14, color: "#55555C" },
   plate: { fontSize: 15, fontWeight: "800", color: "#141414", marginTop: 2, letterSpacing: 1 },
-  eta: { fontSize: 30, fontWeight: "800", color: "#3B6FD8" },
+  eta: { fontSize: 30, fontWeight: "800", color: "#F26A1B" },
   etaLabel: { fontSize: 12, color: "#7A7A80" },
   otpBox: { marginTop: 12, backgroundColor: "#141414", borderRadius: 18, paddingVertical: 12, alignItems: "center" },
   otpLabel: { fontSize: 12, color: "#C9C9CF" },
@@ -224,6 +297,6 @@ const st = StyleSheet.create({
   pickup: { fontSize: 14, color: "#141414", marginTop: 10, fontWeight: "600" },
   small: { fontSize: 12, color: "#7A7A80", marginTop: 10 },
   apps: { flexDirection: "row", gap: 8, marginTop: 6 },
-  appBtn: { flex: 1, backgroundColor: "#F3EEFB", borderRadius: 999, paddingVertical: 12, alignItems: "center", borderWidth: 1, borderColor: "#E3DAF5" },
+  appBtn: { flex: 1, backgroundColor: "#F6F1EB", borderRadius: 999, paddingVertical: 12, alignItems: "center", borderWidth: 1, borderColor: "#EEE6DC" },
   appText: { fontSize: 15, fontWeight: "800", color: "#141414" },
 });

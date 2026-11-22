@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Image, Linking, StyleSheet, Text, TextInput } from "react-native";
+import { Image, Linking, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { BigButton, Card, Disclaimer, Screen, styles as ui } from "../components/ui";
 import { checkMessage, type CheckResult } from "../lib/api";
@@ -48,7 +49,10 @@ export default function CheckThis() {
   const tone = result?.verdict === "scam" ? "red" : result?.verdict === "suspicious" ? "amber" : "green";
   return (
     <Screen title={t({ en: "Is this a scam?", te: "ఇది మోసమా?", hi: "क्या यह धोखा है?" })} eyebrow={t({ en: "Bujji, check this", te: "బుజ్జీ, ఇది చూడు", hi: "बुज्जी, यह देखो" })} icon="shield-checkmark" tint="sea" tab="/check">
-      <Text style={[ui.muted, { marginBottom: 14 }]}>{t({ en: "Pick a screenshot or screen recording, or paste the message. Crop out personal numbers first. Screenshots are not stored.", te: "స్క్రీన్‌షాట్ లేదా స్క్రీన్ రికార్డింగ్ ఎంచుకోండి, లేదా మెసేజ్ పేస్ట్ చేయండి. ముందుగా వ్యక్తిగత నంబర్లు కత్తిరించండి. స్క్రీన్‌షాట్లు దాచబడవు.", hi: "स्क्रीनशॉट या स्क्रीन रिकॉर्डिंग चुनिए, या मैसेज पेस्ट कीजिए। पहले निजी नंबर काट दीजिए। स्क्रीनशॉट सहेजे नहीं जाते।" })}</Text>
+      <Card style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+        <View style={st.infoIcon}><Ionicons name="information" size={18} color="#fff" /></View>
+        <Text style={[ui.body, { flex: 1, fontSize: 15, lineHeight: 22 }]}>{t({ en: "Pick a screenshot or screen recording, or paste the message. Crop out personal numbers first. Screenshots are not stored.", te: "స్క్రీన్‌షాట్ లేదా స్క్రీన్ రికార్డింగ్ ఎంచుకోండి, లేదా మెసేజ్ పేస్ట్ చేయండి. ముందుగా వ్యక్తిగత నంబర్లు కత్తిరించండి. స్క్రీన్‌షాట్లు దాచబడవు.", hi: "स्क्रीनशॉट या स्क्रीन रिकॉर्डिंग चुनिए, या मैसेज पेस्ट कीजिए। पहले निजी नंबर काट दीजिए। स्क्रीनशॉट सहेजे नहीं जाते।" })}</Text>
+      </Card>
       <BigButton color={C.card} textColor={C.ink} label={t({ en: "Pick screenshot", te: "స్క్రీన్‌షాట్ ఎంచుకోండి", hi: "स्क्रीनशॉट चुनें" })} sub={t({ en: "or a screen recording", te: "లేదా స్క్రీన్ రికార్డింగ్", hi: "या स्क्रीन रिकॉर्डिंग" })} onPress={pick} loading={busy && !text} />
       <Card>
         <Text style={ui.h3}>{t({ en: "Or paste the message", te: "లేదా మెసేజ్ పేస్ట్ చేయండి", hi: "या मैसेज पेस्ट करें" })}</Text>
@@ -75,6 +79,7 @@ export default function CheckThis() {
 }
 
 const st = StyleSheet.create({
+  infoIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: C.marigold, alignItems: "center", justifyContent: "center" },
   input: { fontSize: 17, minHeight: 110, textAlignVertical: "top", borderRadius: 16, padding: 15, marginVertical: 12, backgroundColor: C.field, color: C.ink },
   preview: { width: "100%", height: 260, borderRadius: 22, marginBottom: 14, backgroundColor: C.card },
   verdict: { fontSize: 26, fontWeight: "700", color: C.ink },

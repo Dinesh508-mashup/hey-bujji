@@ -7,15 +7,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { SetupBanner } from "./ui";
 import { D } from "./DashArt";
-import { PetalBackdrop, S } from "./soft";
+import { Bujji } from "./Mascot";
+import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
 
-export type DashTab = "dashboard" | "tasks" | "activity" | "accuracy";
+export type DashTab = "dashboard" | "insights" | "tasks" | "activity" | "accuracy";
 
 const NAV: { key: DashTab; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-  { key: "dashboard", icon: "grid-outline", label: "Dashboard" },
-  { key: "tasks", icon: "calendar-outline", label: "Tasks" },
-  { key: "activity", icon: "pulse-outline", label: "Activity" },
-  { key: "accuracy", icon: "stats-chart-outline", label: "Accuracy" },
+  { key: "dashboard", icon: "grid-outline", label: "Overview" },
+  { key: "insights", icon: "sparkles-outline", label: "Care tips" },
+  { key: "tasks", icon: "calendar-clear-outline", label: "Care plan" },
+  { key: "activity", icon: "radio-outline", label: "Live feed" },
+  { key: "accuracy", icon: "ribbon-outline", label: "Bujji score" },
 ];
 
 /** Default navigation between the family pages. The dashboard passes its own handler for its in-page tabs. */
@@ -51,7 +53,13 @@ export function DashShell({ active, onTab = goTab, right, children, fit = false,
                   <Ionicons name="chevron-back" size={20} color={D.ink} />
                 </Pressable>
               ) : null}
-              <Text style={s.brand}>Hey<Text style={{ fontWeight: "800" }}>Bujji</Text></Text>
+              <View style={s.logo}><Bujji size={46} float={false} /></View>
+              <View style={{ marginRight: 8 }}>
+                <Text style={s.brand}><Text style={{ fontWeight: "400" }}>Hey </Text>Bujji</Text>
+                <Text style={s.brandSub}>Family care</Text>
+              </View>
+              {/* reference layout: round chips sit right after the logo */}
+              <View style={s.right}>{right}</View>
             </View>
             {familyNav ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.nav} style={{ flexGrow: 0 }}>
@@ -60,14 +68,13 @@ export function DashShell({ active, onTab = goTab, right, children, fit = false,
                 return (
                   <Pressable key={n.key} onPress={() => onTab(n.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
                     style={({ pressed }) => [s.navItem, on && s.navOn, { opacity: pressed ? 0.8 : 1 }]}>
-                    <Ionicons name={n.icon} size={17} color={on ? "#fff" : D.blue} />
-                    <Text style={[s.navText, on && { color: "#fff" }]}>{n.label}</Text>
+                    <Ionicons name={n.icon} size={16} color={on ? "#fff" : D.muted} />
+                    <Text style={[s.navText, on && { color: "#fff", fontWeight: "600" }]}>{n.label}</Text>
                   </Pressable>
                 );
               })}
             </ScrollView>
             ) : null}
-            <View style={s.right}>{right}</View>
           </View>
           <SetupBanner />
           {oneScreen ? <View style={{ flex: 1, minHeight: 0 }}>{children}</View> : children}
@@ -77,7 +84,6 @@ export function DashShell({ active, onTab = goTab, right, children, fit = false,
 
   return (
     <View style={s.canvas}>
-      <PetalBackdrop colors={S.bloom} height={560} />
       {oneScreen ? (
         <View style={{ flex: 1, padding: 18, paddingTop: insets.top + 18, paddingBottom: insets.bottom + 18, alignItems: "center" }}>{panel}</View>
       ) : (
@@ -89,19 +95,39 @@ export function DashShell({ active, onTab = goTab, right, children, fit = false,
   );
 }
 
+/** The Hey Bujji mark: an orange speech bubble holding a heart (voice + care) on a dark squircle. */
+export function LogoMark({ size = 40 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 40 40">
+      <Defs>
+        <SvgGradient id="lm" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#FF9A55" />
+          <Stop offset="1" stopColor="#F2621A" />
+        </SvgGradient>
+      </Defs>
+      <Rect x="0" y="0" width="40" height="40" rx="12" fill="#161618" />
+      <Path d="M11 10 H29 Q33 10 33 14 V24 Q33 28 29 28 H20 L14.5 32.5 L15.5 28 H11 Q7 28 7 24 V14 Q7 10 11 10 Z" fill="url(#lm)" />
+      <Path d="M20 24.2 C14.6 20.6 13.6 18.4 14.4 16.6 C15.3 14.6 18 14.5 20 16.6 C22 14.5 24.7 14.6 25.6 16.6 C26.4 18.4 25.4 20.6 20 24.2 Z" fill="#fff" />
+    </Svg>
+  );
+}
+
 export const dashShadow = { shadowColor: "#5B4A7A", shadowOpacity: 0.05, shadowRadius: 18, shadowOffset: { width: 0, height: 6 }, elevation: 2 };
 
 const s = StyleSheet.create({
   canvas: { flex: 1, backgroundColor: D.canvas },
-  panel: { width: "100%", maxWidth: 1400, backgroundColor: D.panel, borderRadius: 36, borderWidth: 1, borderColor: "rgba(255,255,255,0.8)" },
+  panel: { width: "100%", maxWidth: 1440, backgroundColor: D.panel, borderRadius: 34, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 28, gap: 16 },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 10, minWidth: 180 },
-  brand: { fontSize: 30, color: D.ink, fontWeight: "400", letterSpacing: -1 },
-  nav: { flexDirection: "row", backgroundColor: "#fff", borderRadius: 999, padding: 6, gap: 4, ...dashShadow },
-  navItem: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 999 },
-  navOn: { backgroundColor: D.blue },
-  navText: { fontSize: 14, color: D.blue, fontWeight: "500" },
-  right: { flexDirection: "row", alignItems: "center", gap: 10, justifyContent: "flex-end", minWidth: 180 },
-  roundBtn: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", ...dashShadow },
+  logo: { width: 46, height: 46, alignItems: "center", justifyContent: "center" },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1, flexWrap: "wrap" },
+  brand: { fontSize: 21, color: D.ink, fontWeight: "800", letterSpacing: -0.8, lineHeight: 24 },
+  brandSub: { fontSize: 11, color: D.orange, fontWeight: "600", letterSpacing: 0.6, textTransform: "uppercase" },
+  // iOS-style segmented control
+  nav: { flexDirection: "row", backgroundColor: "#F2F2F4", borderRadius: 999, padding: 4, gap: 2, borderWidth: 1, borderColor: "#E9E9EC" },
+  navItem: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999 },
+  navOn: { backgroundColor: "#161618" },
+  navText: { fontSize: 14, color: D.muted, fontWeight: "500" },
+  right: { flexDirection: "row", alignItems: "center", gap: 8 },
+  roundBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: D.line, ...dashShadow },
   disclaimer: { fontSize: 12, color: D.muted, textAlign: "center", marginTop: 26 },
 });

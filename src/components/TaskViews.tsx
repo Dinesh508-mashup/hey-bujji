@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { D } from "./DashArt";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Orb, S, softShadow, type IconName } from "./soft";
@@ -10,6 +11,7 @@ import { sendVoice } from "../lib/api";
 import { useVoiceRecorder } from "../lib/audio";
 import { voiceConfirms } from "../lib/confirm";
 import { speak } from "../lib/speak";
+import { Reveal } from "./Motion";
 import { AlarmModal, stepsSince, useNow, useStepsSince, useStoppedAlarms, useTaskStarts, walkStart } from "./TaskAlarm";
 import { countdownLabel, doneToday, msUntil, shouldRing } from "../lib/alarm";
 import { useLang } from "../lib/language";
@@ -127,9 +129,9 @@ function TaskList({ tasks }: { tasks: Task[] }) {
           <Text style={st.allDoneText}>{tr({ en: "All done for today. Ravi can see it.", te: "ఈ రోజు అన్నీ అయిపోయాయి. రవి చూడగలరు.", hi: "आज के सब काम हो गए। रवि देख सकते हैं।" })}</Text>
         </View>
       ) : null}
-      {open.map((t) => (
-        <ParentTask key={t.id} t={t} now={now} startedAt={starts.startedAt(t.id)} stoppedAt={alarms.stoppedAt(t.id)}
-          voice={busy?.id === t.id ? busy.phase : null} heard={heard[t.id]} onSayDone={() => sayDone(t)} onStart={() => startTask(t)} />
+      {open.map((t, i) => (
+        <Reveal key={t.id} delay={300 + i * 90}><ParentTask t={t} now={now} startedAt={starts.startedAt(t.id)} stoppedAt={alarms.stoppedAt(t.id)}
+          voice={busy?.id === t.id ? busy.phase : null} heard={heard[t.id]} onSayDone={() => sayDone(t)} onStart={() => startTask(t)} /></Reveal>
       ))}
     </View>
   );
@@ -162,96 +164,144 @@ function ParentTask({ t, now, startedAt, stoppedAt, voice: vstate, heard, onSayD
   }
 
   const showStart = needsStart && !started;
+  const [open, setOpen] = useState(false);
+  const route = KIND_ROUTE[t.kind];
   return (
-    <View style={[st.row, status === "due" && !started ? st.rowDue : null, started ? st.rowLive : null]}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${t.title}, ${clock(t.time)}`} onPress={listen} style={{ flexDirection: "row", alignItems: "center" }}>
-        <Orb icon={icon} tint={tint} size={48} />
-        <View style={{ flex: 1, marginLeft: 14 }}>
-          <Text style={st.eyebrow}>{t.time ? clock(t.time) : tr({ en: "Any time", te: "ఎప్పుడైనా", hi: "कभी भी" })} · {kindLabel}</Text>
-          <Text style={st.title}>{t.title}</Text>
-          {t.note ? <Text style={st.note}>{t.note}</Text> : null}
+    <View style={st.stack}>
+      {/* stacked-cards look: two softer layers peeking out above */}
+      <View style={[st.layer, st.layer2]} />
+      <View style={[st.layer, st.layer1]} />
+      <View style={[st.card, status === "due" && !started ? st.rowDue : null, started ? st.rowLive : null]}>
+        <View style={st.cardTop}>
+          <LinearGradient colors={tint} start={{ x: 0.2, y: 0.1 }} end={{ x: 0.9, y: 1 }} style={st.thumb}>
+            <Ionicons name={icon} size={34} color="#fff" />
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <Text style={st.cTitle} numberOfLines={2}>{t.title}</Text>
+            <Text style={st.cSub}>{kindLabel}</Text>
+            <View style={st.whenRow}>
+              <Ionicons name="calendar-outline" size={15} color={S.muted} />
+              <Text style={st.whenText}>{tr({ en: "Today", te: "ఈ రోజు", hi: "आज" })}</Text>
+              <Ionicons name="time-outline" size={15} color={S.muted} style={{ marginLeft: 10 }} />
+              <Text style={st.whenText}>{t.time ? clock(t.time) : tr({ en: "Any time", te: "ఎప్పుడైనా", hi: "कभी भी" })}</Text>
+            </View>
+          </View>
+          <Pressable onPress={() => (route && !started ? onStart() : listen())} accessibilityRole="button" accessibilityLabel={tr({ en: "Open", te: "తెరవండి", hi: "खोलें" })}
+            style={({ pressed }) => [st.arrowBtn, pressed && { opacity: 0.7 }]}>
+            <Ionicons name="arrow-up" size={18} color={S.ink} style={{ transform: [{ rotate: "45deg" }] }} />
+          </Pressable>
         </View>
-      </Pressable>
 
-      <View style={st.metaRow}>
-        {started ? (
-          <View style={[st.pill, { backgroundColor: "#E7F5EC" }]}><View style={st.liveDot} /><Text style={[st.pillText, { color: "#2E7A50" }]}>{tr({ en: "In progress", te: "జరుగుతోంది", hi: "चल रहा है" })} · {mins} min</Text></View>
-        ) : status === "due" ? (
-          <View style={[st.pill, { backgroundColor: "#FFF1E3" }]}><Ionicons name="alarm" size={14} color={C.marigold} /><Text style={[st.pillText, { color: C.marigold }]}>{tr({ en: "Time to do it now", te: "ఇప్పుడు చేయండి", hi: "अभी करने का समय" })}</Text></View>
-        ) : ms !== null && ms > 0 ? (
-          <View style={st.pill}><Ionicons name="alarm-outline" size={14} color={S.ink} /><Text style={st.pillText}>{tr({ en: "Alarm", te: "అలారం", hi: "अलार्म" })} {countdownLabel(ms)}</Text></View>
+        <View style={st.metaRow}>
+          {started ? (
+            <View style={[st.pill, { backgroundColor: "#FFF0E6" }]}><View style={st.liveDot} /><Text style={[st.pillText, { color: "#C9480F" }]}>{tr({ en: "In progress", te: "జరుగుతోంది", hi: "चल रहा है" })} · {mins} min</Text></View>
+          ) : status === "due" ? (
+            <View style={[st.pill, { backgroundColor: "#FFF0E6" }]}><Ionicons name="alarm" size={14} color={C.marigold} /><Text style={[st.pillText, { color: C.marigold }]}>{tr({ en: "Time to do it now", te: "ఇప్పుడు చేయండి", hi: "अभी करने का समय" })}</Text></View>
+          ) : ms !== null && ms > 0 ? (
+            <View style={st.pill}><Ionicons name="alarm-outline" size={14} color={S.ink} /><Text style={st.pillText}>{tr({ en: "Alarm", te: "అలారం", hi: "अलार्म" })} {countdownLabel(ms)}</Text></View>
+          ) : null}
+          {stoppedAt ? <View style={st.pill}><Text style={st.pillText}>🔔 {tr({ en: "stopped", te: "ఆపారు", hi: "रोका" })} {hm(stoppedAt)}</Text></View> : null}
+        </View>
+
+        {t.kind === "walk" && started ? (
+          <View style={st.stepsBox}>
+            <Text style={st.stepsNum}>{steps === null ? "—" : steps.toLocaleString("en-IN")}</Text>
+            <Text style={st.stepsLabel}>👣 {tr({ en: "steps since", te: "అడుగులు, మొదలు", hi: "कदम, शुरू" })} {hm(startedAt!)}</Text>
+          </View>
         ) : null}
-        {stoppedAt ? <View style={st.pill}><Text style={st.pillText}>🔔 {tr({ en: "stopped", te: "ఆపారు", hi: "रोका" })} {hm(stoppedAt)}</Text></View> : null}
-      </View>
+        {open && t.note ? <Text style={st.noteOpen}>{t.note}</Text> : null}
 
-      {t.kind === "walk" && started ? (
-        <View style={st.stepsBox}>
-          <Text style={st.stepsNum}>{steps === null ? "—" : steps.toLocaleString("en-IN")}</Text>
-          <Text style={st.stepsLabel}>👣 {tr({ en: "steps since", te: "అడుగులు, మొదలు", hi: "कदम, शुरू" })} {hm(startedAt!)}</Text>
+        <View style={st.divider} />
+        <View style={st.actions}>
+          <Pressable onPress={listen} accessibilityRole="button" accessibilityLabel={tr({ en: "Listen to this task", te: "ఈ పని వినండి", hi: "यह काम सुनिए" })}
+            style={({ pressed }) => [st.actBtn, st.ghostBtn, pressed && { opacity: 0.8 }]}>
+            <Ionicons name="volume-high" size={20} color={S.ink} />
+            <Text style={[st.actText, { color: S.ink }]}>{tr({ en: "Listen", te: "వినండి", hi: "सुनिए" })}</Text>
+          </Pressable>
+          {showStart ? (
+            <Pressable onPress={onStart} accessibilityRole="button" accessibilityLabel={tr({ en: "Start", te: "మొదలుపెట్టండి", hi: "शुरू करें" })}
+              style={({ pressed }) => [st.actBtn, st.startBtn, pressed && { opacity: 0.85 }]}>
+              <Ionicons name={t.kind === "walk" ? "walk" : "play"} size={20} color="#fff" />
+              <Text style={st.actText}>{t.kind === "walk" ? tr({ en: "Start walk", te: "నడక మొదలు", hi: "सैर शुरू" }) : tr({ en: "Start", te: "మొదలుపెట్టండి", hi: "शुरू करें" })}</Text>
+            </Pressable>
+          ) : (
+            <Pressable onPress={onSayDone} disabled={vstate === "checking"} accessibilityRole="button"
+              accessibilityLabel={tr({ en: "Say it's done", te: "అయిపోయింది అని చెప్పండి", hi: "बोलिए हो गया" })}
+              style={({ pressed }) => [st.actBtn, st.startBtn, vstate === "listening" && st.micOn, pressed && { opacity: 0.85 }]}>
+              {vstate === "checking" ? <ActivityIndicator color="#fff" /> : <Ionicons name={vstate === "listening" ? "stop" : "mic"} size={20} color="#fff" />}
+              <Text style={st.actText} numberOfLines={1}>
+                {vstate === "listening" ? tr({ en: "Tap to stop", te: "ఆపడానికి నొక్కండి", hi: "रोकने को दबाइए" })
+                  : vstate === "checking" ? tr({ en: "Checking…", te: "చూస్తున్నాను…", hi: "देख रही हूँ…" })
+                  : started ? tr({ en: "Say “done”", te: "“అయిపోయింది”", hi: "“हो गया”" })
+                  : tr({ en: "Say it's done", te: "అయిపోయింది అనండి", hi: "बोलिए हो गया" })}
+              </Text>
+            </Pressable>
+          )}
         </View>
-      ) : null}
-
-      <View style={st.actions}>
-        <Pressable onPress={listen} accessibilityRole="button" accessibilityLabel={tr({ en: "Listen to this task", te: "ఈ పని వినండి", hi: "यह काम सुनिए" })}
-          style={({ pressed }) => [st.iconBtn, pressed && { opacity: 0.8 }]}>
-          <Ionicons name="volume-high" size={24} color={S.ink} />
-        </Pressable>
-        {showStart ? (
-          <Pressable onPress={onStart} accessibilityRole="button" accessibilityLabel={tr({ en: "Start", te: "మొదలుపెట్టండి", hi: "शुरू करें" })}
-            style={({ pressed }) => [st.actBtn, st.startBtn, pressed && { opacity: 0.85 }]}>
-            <Ionicons name={t.kind === "walk" ? "walk" : "play"} size={22} color="#fff" />
-            <Text style={st.actText}>{t.kind === "walk" ? tr({ en: "Start walk", te: "నడక మొదలు", hi: "सैर शुरू" }) : tr({ en: "Start", te: "మొదలుపెట్టండి", hi: "शुरू करें" })}</Text>
-          </Pressable>
-        ) : (
-          <Pressable onPress={onSayDone} disabled={vstate === "checking"} accessibilityRole="button"
-            accessibilityLabel={tr({ en: "Say it's done", te: "అయిపోయింది అని చెప్పండి", hi: "बोलिए हो गया" })}
-            style={({ pressed }) => [st.actBtn, st.listenBtn, vstate === "listening" && st.micOn, pressed && { opacity: 0.85 }]}>
-            {vstate === "checking" ? <ActivityIndicator color="#fff" /> : <Ionicons name={vstate === "listening" ? "stop" : "mic"} size={22} color="#fff" />}
-            <Text style={st.actText}>
-              {vstate === "listening" ? tr({ en: "Listening… tap to stop", te: "వింటున్నాను… ఆపడానికి నొక్కండి", hi: "सुन रही हूँ… रोकने को दबाइए" })
-                : vstate === "checking" ? tr({ en: "Checking…", te: "చూస్తున్నాను…", hi: "देख रही हूँ…" })
-                : started ? tr({ en: "Say “done” to finish", te: "“అయిపోయింది” అనండి", hi: "“हो गया” बोलिए" })
-                : tr({ en: "Say it's done", te: "అయిపోయింది అనండి", hi: "बोलिए हो गया" })}
-            </Text>
-          </Pressable>
-        )}
+        {heard !== undefined ? (
+          <Text style={[st.heard, { color: C.marigold }]}>{tr({ en: "Heard", te: "విన్నది", hi: "सुना" })}: “{heard || "…"}” · {tr({ en: "not done yet, try again", te: "ఇంకా కాలేదు, మళ్ళీ చెప్పండి", hi: "अभी नहीं, फिर बोलिए" })}</Text>
+        ) : null}
       </View>
-      {heard !== undefined ? (
-        <Text style={[st.heard, { color: C.marigold }]}>{tr({ en: "Heard", te: "విన్నది", hi: "सुना" })}: “{heard || "…"}” · {tr({ en: "not done yet, try again", te: "ఇంకా కాలేదు, మళ్ళీ చెప్పండి", hi: "अभी नहीं, फिर बोलिए" })}</Text>
+      {t.note ? (
+        <Pressable onPress={() => setOpen((v) => !v)} accessibilityRole="button" accessibilityLabel={open ? "Hide note" : "Show note"} style={st.chev}>
+          <Ionicons name={open ? "chevron-up" : "chevron-down"} size={20} color={S.ink} />
+        </Pressable>
       ) : null}
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  row: { backgroundColor: "#fff", borderRadius: 24, padding: 16, ...softShadow, borderWidth: 1.5, borderColor: "transparent" },
+  row: { backgroundColor: "#fff", borderRadius: 22, padding: 14, ...softShadow, borderWidth: 1.5, borderColor: "transparent" },
+  // reference card: stacked layers, square picture, title, date/time row, arrow, divider, two buttons, chevron
+  stack: { paddingTop: 16, marginBottom: 18 },
+  layer: { position: "absolute", left: 0, right: 0, height: 60, borderRadius: 28, backgroundColor: "#fff" },
+  layer2: { top: 0, marginHorizontal: 34, opacity: 0.45 },
+  layer1: { top: 8, marginHorizontal: 16, opacity: 0.75 },
+  card: { backgroundColor: "#fff", borderRadius: 30, padding: 18, ...softShadow, shadowOpacity: 0.08, borderWidth: 1.5, borderColor: "#fff" },
+  cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
+  thumb: { width: 80, height: 80, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  cTitle: { fontSize: 22, fontWeight: "600", color: S.ink, letterSpacing: -0.4 },
+  cSub: { fontSize: 15, color: S.muted, marginTop: 2 },
+  whenRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 8 },
+  whenText: { fontSize: 14, color: "#5C5751" },
+  arrowBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#EEE8E1", ...softShadow, shadowOpacity: 0.08 },
+  divider: { height: 1, backgroundColor: "#F0EAE3", marginTop: 14 },
+  ghostBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E8E1D8", ...softShadow, shadowOpacity: 0.06 },
+  noteOpen: { fontSize: 15, color: "#5C5751", marginTop: 10, lineHeight: 21 },
+  chev: { alignSelf: "center", width: 40, height: 40, borderRadius: 20, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", marginTop: -20, borderWidth: 1, borderColor: "#EEE8E1", ...softShadow, shadowOpacity: 0.1 },
+  tlRow: { flexDirection: "row", gap: 10 },
+  tlLeft: { width: 50, alignItems: "center", paddingTop: 14 },
+  tlTime: { fontSize: 13, fontWeight: "700", color: S.ink },
+  tlDot: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", marginTop: 8, borderWidth: 3, borderColor: "#fff" },
+  tlLine: { flex: 1, width: 2, backgroundColor: "#E7E0D8", marginTop: 4, marginBottom: -14, borderRadius: 1 },
   rowDue: { borderColor: "#F6C48E" },
-  rowLive: { borderColor: "#9FD8B5" },
+  rowLive: { borderColor: "#FFC08F" },
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
-  pill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#F3EEFB", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  pill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#F6F1EB", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   pillText: { fontSize: 13, fontWeight: "700", color: S.ink },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.green },
-  stepsBox: { marginTop: 12, backgroundColor: "#F1FAF4", borderRadius: 18, paddingVertical: 12, alignItems: "center" },
-  stepsNum: { fontSize: 40, fontWeight: "800", color: "#2E7A50" },
-  stepsLabel: { fontSize: 13, color: "#2E7A50", fontWeight: "600" },
-  iconBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#F3EEFB", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#E3DAF5" },
-  startBtn: { backgroundColor: C.green },
+  stepsBox: { marginTop: 12, backgroundColor: "#FFF4EC", borderRadius: 18, paddingVertical: 12, alignItems: "center" },
+  stepsNum: { fontSize: 40, fontWeight: "800", color: "#C9480F" },
+  stepsLabel: { fontSize: 13, color: "#C9480F", fontWeight: "600" },
+  iconBtn: { width: 54, height: 54, borderRadius: 27, backgroundColor: "#F6F1EB", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#EEE6DC" },
+  startBtn: { backgroundColor: S.orange },
   progressRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  progressTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "#EFEAF5", overflow: "hidden" },
-  progressFill: { height: 8, borderRadius: 4, backgroundColor: C.green },
+  progressTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "#EDE6DE", overflow: "hidden" },
+  progressFill: { height: 8, borderRadius: 4, backgroundColor: S.orange },
   progressText: { fontSize: 13, fontWeight: "700", color: S.muted },
-  doneBanner: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#EAF6EE", borderRadius: 18, padding: 12 },
-  doneText: { flex: 1, fontSize: 14, fontWeight: "700", color: "#2E7A50" },
+  doneBanner: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFF0E6", borderRadius: 18, padding: 12 },
+  doneText: { flex: 1, fontSize: 14, fontWeight: "700", color: "#C9480F" },
   allDone: { alignItems: "center", backgroundColor: "#fff", borderRadius: 24, padding: 22, ...softShadow },
   allDoneText: { fontSize: 16, fontWeight: "700", color: S.ink, textAlign: "center", marginTop: 6 },
   actions: { flexDirection: "row", gap: 10, marginTop: 12 },
-  actBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 999, paddingVertical: 14, minHeight: 52 },
+  actBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 18, paddingVertical: 14, minHeight: 54 },
   listenBtn: { backgroundColor: S.black },
-  micBtn: { backgroundColor: "#F3EEFB", borderWidth: 1, borderColor: "#E3DAF5" },
+  micBtn: { backgroundColor: "#F6F1EB", borderWidth: 1, borderColor: "#EEE6DC" },
   micOn: { backgroundColor: C.red, borderColor: "transparent" },
   actText: { fontSize: 16, fontWeight: "700", color: "#fff" },
   heard: { fontSize: 13, marginTop: 8, fontWeight: "600" },
-  timer: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", backgroundColor: "#F3EEFB", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 },
+  timer: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", backgroundColor: "#F6F1EB", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 },
   timerText: { fontSize: 13, fontWeight: "700", color: S.ink },
   steps: { fontSize: 15, fontWeight: "700", color: C.green, marginTop: 6 },
   rowDone: { backgroundColor: "#F7FBF8" },

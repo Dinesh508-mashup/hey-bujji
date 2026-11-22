@@ -53,9 +53,11 @@ export default function RecordClips() {
   const done = Object.values(status).filter((s) => s === "done").length;
   return (
     <Screen title="Record test clips" eyebrow="For the accuracy evaluation" icon="radio-button-on" tint="bloom">
-      <Text style={[ui.muted, { marginBottom: 12 }]}>
-        Read each sentence naturally, in your own way. Mix in some TV or kitchen noise for a few. Aim for 4–6 speakers, 2+ aged 55 or older.
-      </Text>
+      <Card>
+        <Text style={[ui.body, { fontSize: 15, lineHeight: 22 }]}>
+          Read each sentence naturally, in your own way. Mix in some TV or kitchen noise for a few. Aim for 4–6 speakers, 2+ aged 55 or older.
+        </Text>
+      </Card>
       <Card>
         <TextInput value={speaker} onChangeText={setSpeaker} placeholder="Speaker name or tag (e.g. amma, uncle62)" style={st.input} autoCapitalize="none" />
         <Pressable onPress={() => setConsent((c) => !c)} style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>

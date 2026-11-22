@@ -52,11 +52,31 @@ export function countCycles(xs: number[], th: number, minGapSamples: number): nu
   return peaks;
 }
 
+/** Smallest smoothed breathing movement (m/s² of gravity change) and rhythm score accepted as real breathing. */
+export const BREATH_MIN_STD = 0.006;
+export const BREATH_MIN_RHYTHM = 0.35;
+
+/** Highest normalised autocorrelation for a period between minPerMin and maxPerMin cycles a minute. */
+export function periodicity(sig: number[], fs: number, minPerMin: number, maxPerMin: number): number {
+  const m = sig.reduce((a, b) => a + b, 0) / Math.max(1, sig.length);
+  const x = sig.map((v) => v - m);
+  let e0 = 0; for (const v of x) e0 += v * v;
+  if (e0 <= 0) return 0;
+  const lo = Math.max(1, Math.round((60 / maxPerMin) * fs)), hi = Math.round((60 / minPerMin) * fs);
+  let best = 0;
+  for (let lag = lo; lag <= hi && lag < x.length / 2; lag++) {
+    let s = 0; for (let i = 0; i + lag < x.length; i++) s += x[i] * x[i + lag];
+    best = Math.max(best, (s / e0) * (x.length / (x.length - lag))); // unbiased
+  }
+  return best;
+}
+
 export type BreathingResult = {
   breathsPerMinute: number;
   breaths: number;
   seconds: number;
-  quality: "good" | "noisy" | "too_short";
+  quality: "good" | "noisy" | "too_short" | "no_breathing"; // no_breathing: no steady breathing rhythm (phone on a table / in the air)
+  rhythm?: number; // 0..1 how regular the movement is
   axis: "x" | "y" | "z";
   trace: number[]; // downsampled filtered signal for the chart
 };
@@ -86,10 +106,15 @@ export function analyseBreathing(samples: MotionSample[]): BreathingResult {
   const jerk = samples.filter((x) => x.a).map((x) => Math.hypot(x.a!.x, x.a!.y, x.a!.z));
   const moving = jerk.filter((j) => j > 1.2).length / Math.max(1, jerk.length);
   const bpm = Math.round((peaks.length / seconds) * 60 * 10) / 10;
-  const quality = moving > 0.08 || s < 1e-4 || bpm < 4 || bpm > 40 ? "noisy" : "good";
+  // Real breathing repeats steadily at 6–40 a minute. Sensor noise on a table, or random
+  // hand wobble, does not: require a clear autocorrelation peak in that range and a
+  // movement bigger than the sensor's own noise.
+  const rhythm = periodicity(best.sig, fs, 6, 40);
+  const quality: BreathingResult["quality"] = moving > 0.08 ? "noisy"
+    : s < BREATH_MIN_STD || rhythm < BREATH_MIN_RHYTHM || bpm < 4 || bpm > 40 ? "no_breathing" : "good";
 
   const step = Math.max(1, Math.floor(best.sig.length / 240));
-  return { breathsPerMinute: bpm, breaths: peaks.length, seconds, quality, axis: best.axis, trace: best.sig.filter((_, i) => i % step === 0) };
+  return { breathsPerMinute: bpm, breaths: peaks.length, seconds, quality, rhythm, axis: best.axis, trace: best.sig.filter((_, i) => i % step === 0) };
 }
 
 export type ChairStandResult = { stands: number; seconds: number; trace: number[] };

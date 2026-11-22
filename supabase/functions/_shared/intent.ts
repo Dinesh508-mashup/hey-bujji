@@ -4,7 +4,7 @@
 import type { Correction } from "./correct.ts";
 import { COMMON_MEDICINES, type Family } from "./lexicon.ts";
 
-export const INTENTS = ["took_medicine", "set_reminder", "call_family", "red_flag", "scam_report", "order_food", "book_cab", "other"] as const;
+export const INTENTS = ["took_medicine", "set_reminder", "call_family", "red_flag", "scam_report", "order_food", "book_cab", "video_call", "other"] as const;
 export type IntentName = typeof INTENTS[number];
 
 export type Intent = {
@@ -37,6 +37,7 @@ Intents
 - call_family: the parent asks to call or phone someone ("call cheyyi", "phone kalupu", "phone lagao").
 - red_flag: the parent reports chest pain, breathlessness, dizziness, fainting or a fall.
 - scam_report: the parent reports a suspicious call or message: someone asking for an OTP, PIN, money, KYC update, a link, or threatening with police.
+- video_call: the parent asks for a video call with someone ("video call cheyyi", "video call lagao", "I want to see my son").
 - order_food: the parent asks to order food or groceries ("order cheyyi", "tecchi pettu", "mangao", "order banana and bread").
 - book_cab: the parent asks for a cab, taxi or auto to go somewhere ("cab book cheyyi", "auto bulao", "book a cab to the hospital").
 - other: anything else.
@@ -45,7 +46,7 @@ Fields
 - intent: one of the intents above.
 - medicine: the medicine's name exactly as in the parent's list or a standard generic name; "BP tablet" means the parent's BP medicine and "sugar tablet" the sugar medicine; "all" if they took all their tablets; otherwise null.
 - time: "HH:MM" in 24-hour time if a clock time is stated (raatri/raat = night, saayantram/shaam = evening, udayam/subah = morning, madhyaahnam/dopahar = afternoon); otherwise null.
-- contact: the contact's name from the list above, otherwise null.
+- contact: the contact's name from the list above (for call_family and video_call), otherwise null.
 - urgency: "urgent" for red_flag, "high" for scam_report, otherwise "normal".
 - symptom: chest_pain, breathlessness, dizziness, other, or null.
 - money_sent: true only if the parent says money was already sent or paid.
@@ -205,6 +206,7 @@ export function rulesIntent(c: Correction, transcript: string): Intent {
   let intent: IntentName = "other";
   if (c.symptom) intent = "red_flag";
   else if (c.scam) intent = "scam_report";
+  else if (/\bvideo\b/.test(t)) intent = "video_call";
   else if (/\b(cab|taxi|auto|uber|ola|rapido)\b/.test(t)) intent = "book_cab";
   else if (/\b(order|swiggy|zomato|mangao|tecchi|deliver)\b/.test(t)) intent = "order_food";
   else if (/(call|phone|fon|kaal|kalupu|lagao|కాల్|फ़ोन|फोन)/.test(t) && c.contact) intent = "call_family";
@@ -214,7 +216,7 @@ export function rulesIntent(c: Correction, transcript: string): Intent {
     intent,
     medicine: intent === "took_medicine" || intent === "set_reminder" ? c.medicine : null,
     time: intent === "set_reminder" || intent === "took_medicine" ? c.time : null,
-    contact: intent === "call_family" ? c.contact : null,
+    contact: intent === "call_family" || intent === "video_call" ? (c.contact ?? (intent === "video_call" ? "Ravi" : null)) : null,
     urgency: intent === "red_flag" ? "urgent" : intent === "scam_report" ? "high" : "normal",
     symptom: c.symptom,
     money_sent: c.moneySent,

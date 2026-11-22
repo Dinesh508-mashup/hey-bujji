@@ -21,6 +21,7 @@ export type Action =
   | { type: "reminder"; time: string; medicine: string | null }
   | { type: "emergency"; number: "108" }
   | { type: "dial"; number: "1930"; reason: string }
+  | { type: "video"; name: string; phone: string }
   | { type: "order"; items: string[]; order_id?: string }
   | { type: "cab"; destination: string; order_id?: string; ride?: import("../components/Orders").Ride }
   | { type: "none" };

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
+import { Bujji } from "../components/Mascot";
+import { Reveal } from "../components/Motion";
 import { FoodOrderCard, RideCard } from "../components/Orders";
-import { Animated, Easing, Linking, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, Easing, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { Orb, S, SectionHeader, type IconName } from "../components/soft";
 import * as Haptics from "expo-haptics";
-import { BigButton, Card, Disclaimer, Screen, SetupBanner, styles as ui } from "../components/ui";
+import { BigButton, Card, Disclaimer, SetupBanner, styles as ui } from "../components/ui";
 import { type BujjiResult, sendText, sendVoice } from "../lib/api";
 import { useVoiceRecorder } from "../lib/audio";
 import { speak, stopSpeaking } from "../lib/speak";
@@ -89,6 +91,11 @@ export default function Parent() {
     }
     const say = replyIn(r.reply, lang);
     await speak(say.text, say.voice);
+    if (a.type === "video") {
+      // WhatsApp has no public "start video call" link: open the chat with the number; Amma taps the video button.
+      const n = a.phone.replace(/[^0-9]/g, "");
+      Linking.openURL(`whatsapp://send?phone=${n}`).catch(() => Linking.openURL(`https://wa.me/${n}`)).catch(() => setNote("WhatsApp is not installed"));
+    }
     if (a.type === "call") Linking.openURL(`tel:${a.phone}`).catch(() => setNote(t({ en: `Could not open the dialler for ${a.phone}`, te: `${a.phone} కి డయల్ చేయలేకపోయాను`, hi: `${a.phone} पर डायल नहीं हो पाया` })));
   }
 
@@ -130,96 +137,104 @@ export default function Parent() {
     : phase === "thinking" ? t({ en: "One moment", te: "ఒక్క నిమిషం", hi: "एक पल" })
     : t({ en: "Tap and speak in English, Telugu or Hindi", te: "నొక్కి మాట్లాడండి", hi: "दबाइए और बोलिए" });
   const shown = result ? replyIn(result.reply, lang) : null;
-  const tone = result?.intent.urgency === "urgent" ? "red" : result?.intent.intent === "scam_report" ? "amber" : "teal";
+
+  const insets = useSafeAreaInsets();
+  const stageLine = phase === "listening" ? t({ en: "I'm listening…", te: "వింటున్నాను…", hi: "सुन रही हूँ…" })
+    : phase === "thinking" ? t({ en: "One moment…", te: "ఒక్క నిమిషం…", hi: "एक पल…" })
+    : shown ? `“${shown.text}”`
+    : error ? t({ en: "Sorry, please try again.", te: "క్షమించండి, మళ్ళీ ప్రయత్నించండి.", hi: "माफ़ कीजिए, फिर से कोशिश कीजिए।" })
+    : t({ en: "Hi Amma, what can I do for you?", te: "నమస్తే అమ్మా, ఏం చేయమంటారు?", hi: "नमस्ते अम्मा, क्या करूँ?" });
+  const stageColors: readonly [string, string, string] = result?.intent.urgency === "urgent" ? ["#FFB4B4", "#F05252", "#9B1C1C"]
+    : phase === "listening" ? ["#FFB27E", "#F26A1B", "#B8410A"] : ["#FFC79F", "#F58340", "#D9520F"];
 
   return (
-    <Screen
-      title={t({ en: "Hello Amma", te: "నమస్తే అమ్మా", hi: "नमस्ते अम्मा" })}
-      eyebrow={new Date().toLocaleDateString(DATE_LOCALE[lang], { weekday: "long", day: "numeric", month: "long" })}
-      icon="mic"
-      tint="bloom"
-    >
-      <SetupBanner />
+    <View style={s.page}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 6, paddingBottom: insets.bottom + 130, paddingHorizontal: 16, alignItems: "center" }} keyboardShouldPersistTaps="handled">
+        <View style={s.inner}>
+          <View style={s.top}>
+            <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={s.roundSm} accessibilityLabel="Back"><Ionicons name="chevron-back" size={20} color={C.ink} /></Pressable>
+            <View style={{ alignItems: "center" }}>
+              <Text style={s.topTitle}>Hey Bujji</Text>
+              <Text style={s.topSub}>{new Date().toLocaleDateString(DATE_LOCALE[lang], { weekday: "long", day: "numeric", month: "long" })}</Text>
+            </View>
+            <View style={s.roundSm}><Bujji size={40} float={false} listening={phase === "listening"} /></View>
+          </View>
+          <SetupBanner />
 
-      <View style={s.micWrap}>
-        {phase === "listening" ? (
-          <Animated.View style={[s.ring, { opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }), transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.45] }) }] }]} />
-        ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Hey Bujji microphone"
-          onPress={onMic}
-          style={({ pressed }) => [s.mic, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
-        >
-          <LinearGradient
-            colors={phase === "listening" ? ["#FF9A9E", "#E5484D"] : phase === "thinking" ? ["#E4DCFA", "#9B87E8"] : ["#FFD3A8", "#F7A35C"]}
-            start={{ x: 0.2, y: 0.1 }} end={{ x: 0.9, y: 1 }} style={s.micFill}>
-            <Ionicons name={phase === "listening" ? "stop" : phase === "thinking" ? "ellipsis-horizontal" : "mic"} size={58} color="#fff" />
-            <Text style={s.micLabel}>{micLabel}</Text>
-          </LinearGradient>
-        </Pressable>
-      </View>
-      <Text style={[ui.muted, { textAlign: "center", marginBottom: 18 }]}>{micSub}</Text>
+          {/* the stage: Bujji's words, big and centred, over a glowing orb */}
+          <Reveal delay={80}>
+          <Pressable onPress={onMic} accessibilityRole="button" accessibilityLabel="Hey Bujji microphone" style={s.stage}>
+            <LinearGradient colors={stageColors} locations={[0, 0.55, 1]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+            <Text style={s.stageWho}>{phase === "listening" ? t({ en: "Listening", te: "వింటున్నాను", hi: "सुन रही हूँ" }) : phase === "thinking" ? t({ en: "Thinking", te: "ఆలోచిస్తున్నాను", hi: "सोच रही हूँ" }) : "Bujji"}</Text>
+            <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 22 }}>
+              <Text style={s.stageLine}>{stageLine}</Text>
+              {shown?.sub ? <Text style={s.stageSub}>{shown.sub}</Text> : null}
+            </View>
+            <View style={s.orbWrap}>
+              <Animated.View style={[s.orbGlow, { opacity: phase === "listening" ? pulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0.1] }) : 0.35, transform: [{ scale: phase === "listening" ? pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) : 1 }] }]} />
+              <LinearGradient colors={["#FFF4EC", "#FFB27E", "#F2621A"]} start={{ x: 0.3, y: 0.2 }} end={{ x: 0.8, y: 1 }} style={s.orb} />
+            </View>
+          </Pressable>
+          </Reveal>
 
-      {error ? (
-        <Card tone="amber"><Text style={ui.h3}>{t({ en: "Something went wrong", te: "ఏదో తప్పు జరిగింది", hi: "कुछ गड़बड़ हो गई" })}</Text><Text style={ui.muted}>{error}</Text></Card>
-      ) : null}
+          {error ? <Card tone="amber"><Text style={ui.muted}>{error}</Text></Card> : null}
 
-      {result ? (
-        <Card tone={tone}>
-          <Text style={s.replyText}>{shown?.text}</Text>
-          {shown?.sub ? <Text style={[ui.muted, { marginTop: 6 }]}>{shown.sub}</Text> : null}
-          {note ? <Text style={[ui.body, { marginTop: 10, fontWeight: "700" }]}>{note}</Text> : null}
-          {result.action.type === "call" ? <Text style={[ui.body, { marginTop: 10, fontWeight: "700" }]}>📞 {t({ en: "Calling", te: "కాల్ చేస్తున్నాను:", hi: "फ़ोन लगा रही हूँ:" })} {result.action.name} ({result.action.relation})</Text> : null}
-          {result.action.type === "dial" ? (
-            <BigButton style={{ marginTop: 12 }} color={C.red} label={t({ en: "Call 1930", te: "1930 కి కాల్ చేయండి", hi: "1930 पर कॉल करें" })} sub={t({ en: "Cyber fraud helpline · call now", te: "సైబర్ మోసం హెల్ప్‌లైన్", hi: "साइबर धोखाधड़ी हेल्पलाइन" })} onPress={() => Linking.openURL("tel:1930")} />
+          {result ? (
+            <Reveal><View style={s.details}>
+              {note ? <Text style={[ui.body, { fontWeight: "700" }]}>{note}</Text> : null}
+              {result.action.type === "call" ? <Text style={s.detailLine}>📞 {t({ en: "Calling", te: "కాల్ చేస్తున్నాను:", hi: "फ़ोन लगा रही हूँ:" })} {result.action.name} ({result.action.relation})</Text> : null}
+              {result.action.type === "dial" ? (
+                <BigButton style={{ marginTop: 12 }} color={C.red} label={t({ en: "Call 1930", te: "1930 కి కాల్ చేయండి", hi: "1930 पर कॉल करें" })} sub={t({ en: "Cyber fraud helpline · call now", te: "సైబర్ మోసం హెల్ప్‌లైన్", hi: "साइबर धोखाधड़ी हेल्पलाइन" })} onPress={() => Linking.openURL("tel:1930")} />
+              ) : null}
+              {result.action.type === "video" ? <Text style={s.detailLine}>📹 WhatsApp · {result.action.name} — {t({ en: "tap the video camera button at the top", te: "పైన వీడియో కెమెరా బటన్ నొక్కండి", hi: "ऊपर वीडियो कैमरा बटन दबाइए" })}</Text> : null}
+              {result.action.type === "order" ? <FoodOrderCard orderId={result.action.order_id} items={result.action.items} /> : null}
+              {result.action.type === "cab" && result.action.ride ? <RideCard ride={result.action.ride} destination={result.action.destination} orderId={result.action.order_id} /> : null}
+              {result.action.type === "emergency" && !emergency ? (
+                <BigButton style={{ marginTop: 12 }} color={C.red} label={t({ en: "Call 108", te: "108 కి కాల్", hi: "108 पर कॉल" })} onPress={() => setEmergency(true)} />
+              ) : null}
+              <View style={s.heard}>
+                <Text style={s.heardLabel}>{t({ en: "Heard", te: "విన్నది", hi: "सुना" })}</Text>
+                <Text style={s.heardText}>{result.transcript || "—"}</Text>
+                {result.correction?.fixes.length ? (
+                  <View style={s.chips}>
+                    {result.correction.fixes.map((f, i) => <Text key={i} style={s.chip}>{f.heard} → {f.fixed}</Text>)}
+                  </View>
+                ) : null}
+                <Text style={s.meta}>{result.stt?.provider ?? "typed"} · {result.llmSource} · {(result.ms / 1000).toFixed(1)}s</Text>
+              </View>
+            </View></Reveal>
           ) : null}
-          {result.action.type === "order" ? <FoodOrderCard orderId={result.action.order_id} items={result.action.items} /> : null}
-          {result.action.type === "cab" && result.action.ride ? <RideCard ride={result.action.ride} destination={result.action.destination} /> : null}
-          {result.action.type === "emergency" && !emergency ? (
-            <BigButton style={{ marginTop: 12 }} color={C.red} label={t({ en: "Call 108", te: "108 కి కాల్", hi: "108 पर कॉल" })} onPress={() => setEmergency(true)} />
-          ) : null}
-          <View style={s.heard}>
-            <Text style={s.heardLabel}>{t({ en: "Heard", te: "విన్నది", hi: "सुना" })}</Text>
-            <Text style={s.heardText}>{result.transcript || "—"}</Text>
-            {result.correction?.fixes.length ? (
+
+          {typing ? (
+            <Card>
+              <TextInput value={typed} onChangeText={setTyped} placeholder={`e.g. ${EXAMPLES[0]}`} style={s.input} onSubmitEditing={() => typed && run(() => sendText(typed))} />
+              <BigButton label={t({ en: "Send", te: "పంపండి", hi: "भेजें" })} onPress={() => typed && run(() => sendText(typed))} disabled={!typed || phase === "thinking"} />
               <View style={s.chips}>
-                {result.correction.fixes.map((f, i) => (
-                  <Text key={i} style={s.chip}>{f.heard} → {f.fixed}</Text>
+                {EXAMPLES.map((e) => (
+                  <Pressable key={e} onPress={() => { setTyped(e); run(() => sendText(e)); }}><Text style={s.chip}>{e}</Text></Pressable>
                 ))}
               </View>
-            ) : null}
-            <Text style={s.meta}>{result.stt?.provider ?? "typed"} · {result.llmSource} · {(result.ms / 1000).toFixed(1)}s</Text>
-          </View>
-        </Card>
-      ) : null}
+            </Card>
+          ) : null}
+          <Disclaimer />
+        </View>
+      </ScrollView>
 
-      <SectionHeader title={t({ en: "Check today", te: "ఈ రోజు పరీక్షలు", hi: "आज की जाँच" })} />
-      <View style={s.grid}>
-        <Tile icon="shield-checkmark" tint={S.sky} label={t({ en: "Bujji, check this", te: "బుజ్జీ, ఇది చూడు", hi: "बुज्जी, यह देखो" })} sub={t({ en: "Message or screenshot", te: "మెసేజ్ / స్క్రీన్‌షాట్", hi: "मैसेज / स्क्रीनशॉट" })} onPress={() => router.push("/check")} />
-        <Tile icon="leaf" tint={S.peach} label={t({ en: "Breathing", te: "ఊపిరి", hi: "साँस" })} sub={t({ en: "Phone on chest", te: "ఫోన్ ఛాతీ మీద", hi: "फ़ोन छाती पर" })} onPress={() => router.push("/breathing")} />
-        <Tile icon="body" tint={S.sage} label={t({ en: "Chair stand", te: "కుర్చీ వ్యాయామం", hi: "कुर्सी व्यायाम" })} sub={t({ en: "30 seconds", te: "30 సెకన్లు", hi: "30 सेकंड" })} onPress={() => router.push("/chairstand")} />
-        <Tile icon="moon" tint={S.lilac} label={t({ en: "Memory", te: "జ్ఞాపకశక్తి", hi: "याददाश्त" })} sub={t({ en: "3 words", te: "3 పదాలు", hi: "3 शब्द" })} onPress={() => router.push("/memory")} />
+      {/* call-style controls */}
+      <View style={[s.bar, { paddingBottom: insets.bottom + 14 }]}>
+        <Pressable onPress={() => setTyping((v) => !v)} style={[s.side, typing && { backgroundColor: C.ink }]} accessibilityLabel={t({ en: "Type instead", te: "టైప్ చేయండి", hi: "टाइप करें" })}>
+          <Ionicons name="keypad" size={24} color={typing ? "#fff" : C.ink} />
+        </Pressable>
+        <Pressable onPress={onMic} accessibilityRole="button" accessibilityLabel={micLabel} style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }]}>
+          <LinearGradient colors={phase === "listening" ? ["#FF8A80", "#E5484D"] : phase === "thinking" ? ["#3A3A3A", "#121212"] : ["#FF8A3D", "#F2621A"]} style={s.talk}>
+            <Ionicons name={phase === "listening" ? "stop" : phase === "thinking" ? "ellipsis-horizontal" : "mic"} size={34} color="#fff" />
+          </LinearGradient>
+        </Pressable>
+        <Pressable onPress={() => router.navigate("/")} style={s.side} accessibilityLabel="Home">
+          <Ionicons name="home" size={22} color={C.ink} />
+        </Pressable>
       </View>
-
-      <Pressable onPress={() => setTyping((t) => !t)} style={{ alignSelf: "center", padding: 10 }}>
-        <Text style={[ui.muted, { textDecorationLine: "underline" }]}>{typing ? t({ en: "Hide typing", te: "టైపింగ్ దాచు", hi: "टाइपिंग छिपाएँ" }) : t({ en: "Type instead (for testing)", te: "టైప్ చేయండి (టెస్టింగ్)", hi: "टाइप करें (टेस्टिंग)" })}</Text>
-      </Pressable>
-      {typing ? (
-        <Card>
-          <TextInput value={typed} onChangeText={setTyped} placeholder={`e.g. ${EXAMPLES[0]}`} style={s.input} onSubmitEditing={() => typed && run(() => sendText(typed))} />
-          <BigButton label={t({ en: "Send", te: "పంపండి", hi: "भेजें" })} onPress={() => typed && run(() => sendText(typed))} disabled={!typed || phase === "thinking"} />
-          <View style={s.chips}>
-            {EXAMPLES.map((e) => (
-              <Pressable key={e} onPress={() => { setTyped(e); run(() => sendText(e)); }}>
-                <Text style={s.chip}>{e}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Card>
-      ) : null}
-
-      <Disclaimer />
+      <Text style={[s.micSub, { bottom: insets.bottom + 2 }]}>{micSub}</Text>
 
       <Modal visible={emergency} animationType="fade" onRequestClose={() => setEmergency(false)}>
         <View style={s.emergency}>
@@ -233,26 +248,30 @@ export default function Parent() {
           <Text style={[s.emSub, { fontSize: 13, marginTop: 18 }]}>{t({ en: "Hey Bujji is not a medical device. In an emergency, call 108.", te: "హే బుజ్జి వైద్య పరికరం కాదు. అత్యవసరంలో 108 కి కాల్ చేయండి.", hi: "हे बुज्जी चिकित्सा उपकरण नहीं है। आपात स्थिति में 108 पर कॉल करें।" })}</Text>
         </View>
       </Modal>
-    </Screen>
-  );
-}
-
-function Tile({ icon, tint, label, sub, onPress }: { icon: IconName; tint: readonly [string, string]; label: string; sub: string; onPress: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [s.tile, { transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
-      <Orb icon={icon} tint={tint} size={44} />
-      <Text style={s.tileLabel}>{label}</Text>
-      <Text style={s.tileSub}>{sub}</Text>
-    </Pressable>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  micWrap: { alignItems: "center", justifyContent: "center", height: 250, marginBottom: 6 },
-  ring: { position: "absolute", width: 220, height: 220, borderRadius: 110, backgroundColor: C.red },
-  mic: { width: 220, height: 220, borderRadius: 110, borderWidth: 8, borderColor: "rgba(255,255,255,0.9)", ...shadow, shadowOpacity: 0.18 },
-  micFill: { flex: 1, borderRadius: 110, alignItems: "center", justifyContent: "center" },
-  micLabel: { fontSize: 20, fontWeight: "600", color: "#fff", marginTop: 6, textAlign: "center", paddingHorizontal: 16 },
+  page: { flex: 1, backgroundColor: "#F6F3EF" },
+  inner: { width: "100%", maxWidth: 520 },
+  top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  roundSm: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", overflow: "hidden", ...shadow, shadowOpacity: 0.06 },
+  topTitle: { fontSize: 17, fontWeight: "700", color: C.ink },
+  topSub: { fontSize: 12, color: C.muted, marginTop: 1 },
+  stage: { height: 470, borderRadius: 38, overflow: "hidden", alignItems: "center", paddingTop: 22, borderWidth: 6, borderColor: "#fff", ...shadow, shadowOpacity: 0.12 },
+  stageWho: { fontSize: 15, color: "rgba(255,255,255,0.85)", fontWeight: "600", letterSpacing: 0.3 },
+  stageLine: { fontSize: 28, lineHeight: 36, color: "#fff", fontWeight: "700", textAlign: "center", letterSpacing: -0.3 },
+  stageSub: { fontSize: 15, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 10 },
+  orbWrap: { width: 160, height: 160, alignItems: "center", justifyContent: "center", marginBottom: 26 },
+  orbGlow: { position: "absolute", width: 110, height: 110, borderRadius: 55, backgroundColor: "#FFD2B0" },
+  orb: { width: 104, height: 104, borderRadius: 52, borderWidth: 2, borderColor: "rgba(255,255,255,0.6)" },
+  details: { backgroundColor: "#fff", borderRadius: 26, padding: 18, marginTop: 14, ...shadow, shadowOpacity: 0.05 },
+  detailLine: { fontSize: 16, color: C.ink, fontWeight: "700", marginTop: 4 },
+  bar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 44, paddingTop: 12, backgroundColor: "rgba(246,243,239,0.95)" },
+  side: { width: 58, height: 58, borderRadius: 29, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", ...shadow, shadowOpacity: 0.08 },
+  talk: { width: 82, height: 82, borderRadius: 41, alignItems: "center", justifyContent: "center", borderWidth: 4, borderColor: "#fff", ...shadow, shadowOpacity: 0.2 },
+  micSub: { position: "absolute", left: 0, right: 0, textAlign: "center", fontSize: 11, color: C.muted },
   replyText: { fontSize: 24, fontWeight: "600", color: C.ink, lineHeight: 36 },
   heard: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line },
   heardLabel: { fontSize: 12, fontWeight: "700", color: C.muted, textTransform: "uppercase", letterSpacing: 1 },
@@ -260,10 +279,6 @@ const s = StyleSheet.create({
   meta: { fontSize: 12, color: C.muted, marginTop: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   chip: { backgroundColor: C.violetSoft, color: C.ink, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, fontSize: 14, overflow: "hidden" },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 6 },
-  tile: { flexBasis: "47%", flexGrow: 1, backgroundColor: C.card, borderRadius: 22, padding: 16, alignItems: "flex-start", ...shadow },
-  tileLabel: { fontSize: 16, fontWeight: "700", color: C.ink, marginTop: 10 },
-  tileSub: { fontSize: 13, color: C.muted, marginTop: 2 },
   input: { fontSize: 17, borderRadius: 16, padding: 15, marginBottom: 12, backgroundColor: C.field, color: C.ink },
   emergency: { flex: 1, backgroundColor: C.red, alignItems: "center", justifyContent: "center", padding: 24 },
   emTitle: { fontSize: 32, fontWeight: "700", color: "#fff", textAlign: "center" },

@@ -55,3 +55,32 @@ test("CDC STEADI thresholds", () => {
   assert.equal(chairStandBelowAverage(9, 68, "female"), true);
   assert.equal(chairStandBelowAverage(12, 68, "female"), false);
 });
+
+test("breathing: realistic noisy, slow and uneven breathing still counts right", () => {
+  const r = rng(11);
+  const make = (bpm: number, noise: number) => {
+    const out: MotionSample[] = [];
+    for (let i = 0; i < 60 * 20; i++) {
+      const t = i / 20;
+      const depth = 0.02 + 0.012 * Math.sin(2 * Math.PI * t / 23); // breaths of uneven depth
+      const tilt = depth * Math.sin(2 * Math.PI * (bpm / 60) * t + 0.3 * Math.sin(t / 5)) + 0.04 * Math.sin(2 * Math.PI * t / 40); // + slow posture drift
+      out.push({ t: t * 1000, g: { x: noise * r(), y: 0.2 + noise * r(), z: -9.8 + tilt + noise * r() }, a: { x: 0.02 * r(), y: 0.02 * r(), z: 0.02 * r() } });
+    }
+    return out;
+  };
+  for (const bpm of [8, 12, 16, 22]) {
+    const res = analyseBreathing(make(bpm, 0.03));
+    assert.equal(res.quality, "good", `bpm ${bpm}`);
+    assert.ok(Math.abs(res.breathsPerMinute - bpm) <= 1.5, `expected ${bpm}, got ${res.breathsPerMinute}`);
+  }
+});
+
+test("breathing: phone on a table or in the air gives no number", () => {
+  const r = rng(5);
+  const still = (noise: number, drift = 0) => Array.from({ length: 60 * 20 }, (_, i) => {
+    const t = i / 20;
+    return { t: t * 1000, g: { x: noise * r(), y: 0.2 + noise * r() + drift * Math.sin(t * 2.7) * r(), z: -9.8 + noise * r() }, a: { x: 0.01 * r(), y: 0.01 * r(), z: 0.01 * r() } } as MotionSample;
+  });
+  assert.notEqual(analyseBreathing(still(0.004)).quality, "good", "table");
+  assert.notEqual(analyseBreathing(still(0.03, 0.05)).quality, "good", "random wobble");
+});

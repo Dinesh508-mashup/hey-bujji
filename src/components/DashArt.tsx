@@ -7,21 +7,25 @@ import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, RadialGradie
 // pill buttons), lilac/pink tints, white cards on a lavender-pink bloom.
 // `blue*` keep their names so existing styles pick up the new colours.
 export const D = {
-  blue: "#1A1424",
-  blueSoft: "#F2EDFB",
-  blueMid: "#A895E6",
-  canvas: "#FBF6FA",
-  panel: "rgba(255,255,255,0.55)",
+  // Apple-style neutral system: near-black ink, system blue for data, system status colours.
+  // `blue` is the primary accent (buttons, selected states); kept by name so all styles follow.
+  blue: "#1D1D1F",
+  blueSoft: "#F2F2F7",
+  blueMid: "#F26A1B", // charts and data: orange
+  orange: "#F26A1B",
+  dark: "#161618",
+  canvas: "#E7E7EA",
+  panel: "#FFFFFF",
   card: "#FFFFFF",
-  ink: "#141414",
-  muted: "#7A7A80",
-  line: "#F0EAF4",
-  pill: "#F7F3FA",
-  red: "#E5484D",
-  redSoft: "#FDECEC",
-  amber: "#F2A65A",
-  amberSoft: "#FFF3E4",
-  green: "#3FA36B",
+  ink: "#1D1D1F",
+  muted: "#6E6E73",
+  line: "#E8E8ED",
+  pill: "#F5F5F7",
+  red: "#FF3B30",
+  redSoft: "#FFF1F0",
+  amber: "#FF9F0A",
+  amberSoft: "#FFF6E5",
+  green: "#34C759",
 } as const;
 
 type Pt = { x: number; y: number };

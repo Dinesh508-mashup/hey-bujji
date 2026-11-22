@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { Reveal, Stagger } from "./Motion";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -25,15 +26,15 @@ export function Screen({ children, scroll = true, maxWidth = 640, title, eyebrow
     <>
       {nav ? <View style={styles.topBar}>
         {back ? <GlassButton icon="chevron-back" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} /> : <View />}
-        <GlassButton icon="home-outline" label="Home" onPress={() => router.navigate("/")} />
+        <View style={{ width: 42 }} />
       </View> : null}
-      {title ? <Hero compact icon={icon} eyebrow={eyebrow} title={title} /> : null}
+      {title ? <Reveal from={16}><Hero compact icon={icon} eyebrow={eyebrow} title={title} /></Reveal> : null}
     </>
   );
-  const inner = <View style={[styles.inner, { maxWidth }]}>{head}{children}</View>;
+  const inner = <View style={[styles.inner, { maxWidth }]}>{head}<Stagger start={120}>{children}</Stagger></View>;
   return (
     <View style={styles.safe}>
-      <PetalBackdrop colors={S[tint]} height={380} />
+      <PetalBackdrop colors={S[tint]} height={330} />
       {scroll ? (
         <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 8, paddingBottom: bottom }]} keyboardShouldPersistTaps="handled">
           {inner}

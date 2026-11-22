@@ -12,11 +12,11 @@ import type { VoiceLang } from "../lib/language";
 export type GuideMode = "breathing" | "chair" | "memory";
 
 const FIELD: Record<GuideMode, readonly [string, string, string]> = {
-  breathing: ["#F9C9D6", "#F2789B", "#F7B8C9"],
-  chair: ["#0B3A50", "#1786A6", "#0B3A50"],
-  memory: ["#2E2563", "#6E58D0", "#2E2563"],
+  breathing: ["#FFD2B3", "#F58A4A", "#FFC29C"],
+  chair: ["#6B2A0A", "#F26A1B", "#7E330C"],
+  memory: ["#4A2410", "#D9541A", "#4A2410"],
 };
-const HOT: Record<GuideMode, string> = { breathing: "#FFE7A8", chair: "#9FF3FF", memory: "#E6DBFF" };
+const HOT: Record<GuideMode, string> = { breathing: "#FFE7A8", chair: "#FFE0C2", memory: "#FFD9B8" };
 
 const loop = (v: Animated.Value, ms: number, ease = Easing.inOut(Easing.sin)) =>
   Animated.loop(Animated.sequence([
@@ -70,7 +70,7 @@ export function BodyGuide({ mode, caption, cues, big, bigOf, bigLabel, tag, runn
     <View style={[g.card, style]}>
       <LinearGradient colors={FIELD[mode]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       {/* soft vignette glow behind the figure */}
-      <View style={[g.halo, { backgroundColor: mode === "breathing" ? "rgba(255,255,255,0.25)" : "rgba(160,240,255,0.18)" }]} />
+      <View style={[g.halo, { backgroundColor: mode === "breathing" ? "rgba(255,255,255,0.25)" : "rgba(255,214,180,0.18)" }]} />
 
       {mode === "chair" ? (
         <View style={g.chair}>

@@ -78,6 +78,13 @@ export function buildReply(i: Intent, family: Family, replyLang?: "te" | "hi"): 
       }
       return { lang, ...base };
     }
+    case "video_call": {
+      const who = contact ?? family.contacts.find((c) => c.relation === "son");
+      const n = who?.name ?? sonName;
+      return hi
+        ? { lang, text: `${nat(n, true)} को व्हाट्सऐप वीडियो कॉल लगा रही हूँ।`, english: `Opening a WhatsApp video call with ${n}.` }
+        : { lang, text: `${nat(n, false)} కి వాట్సాప్ వీడియో కాల్ చేస్తున్నాను.`, english: `Opening a WhatsApp video call with ${n}.` };
+    }
     case "order_food": {
       const what = (i.items ?? []).join(", ");
       if (!what) {
@@ -124,6 +131,8 @@ export function feedLine(i: Intent, family: Family): FeedLine | null {
         summary: i.money_sent ? `Possible scam: ${p} says money was already sent. Call 1930.` : `Possible scam call to ${p}`,
         urgency: i.money_sent ? "urgent" : "high",
       };
+    case "video_call":
+      return { type: "call", summary: `${p} is video calling ${contact ? contact.name : family.contacts.find((c) => c.relation === "son")?.name ?? "family"} on WhatsApp`, urgency: "normal" };
     case "order_food":
       return (i.items ?? []).length
         ? { type: "order_request", summary: `${p} wants to order: ${(i.items ?? []).join(", ")}. Approve or reject below.`, urgency: "high" }

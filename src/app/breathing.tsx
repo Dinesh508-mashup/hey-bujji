@@ -60,6 +60,8 @@ export default function Breathing() {
         ? t({ en: `${Math.round(r.breathsPerMinute)} breaths a minute. That is outside the usual range. Please see a doctor. I am telling Ravi.`, te: `నిమిషానికి ${Math.round(r.breathsPerMinute)} ఊపిరి. ఇది మామూలు కంటే వేరుగా ఉంది. డాక్టర్‌ని సంప్రదించండి. రవికి చెబుతున్నాను.`, hi: `एक मिनट में ${Math.round(r.breathsPerMinute)} साँसें। यह सामान्य से अलग है। डॉक्टर से मिलिए। रवि को बता रही हूँ।` })
         : t({ en: `Done. ${Math.round(r.breathsPerMinute)} breaths a minute. That's good.`, te: `పూర్తయింది. నిమిషానికి ${Math.round(r.breathsPerMinute)} ఊపిరి. బాగుంది.`, hi: `हो गया। एक मिनट में ${Math.round(r.breathsPerMinute)} साँसें। अच्छा है।` });
       speak(msg, voice);
+    } else if (r.quality === "no_breathing") {
+      speak(t({ en: "I couldn't feel your breathing. Lie down, put the phone flat on your chest, and try again.", te: "మీ ఊపిరి తెలియలేదు. పడుకుని, ఫోన్ ఛాతీ మీద సమంగా పెట్టి మళ్ళీ చేద్దాం.", hi: "आपकी साँस महसूस नहीं हुई। लेटिए, फ़ोन छाती पर सीधा रखिए और फिर से कीजिए।" }), voice);
     } else {
       speak(t({ en: "There was some movement. Let's try again, staying still and quiet.", te: "కొంచెం కదలిక వచ్చింది. కదలకుండా, మాట్లాడకుండా మళ్ళీ చేద్దాం.", hi: "थोड़ी हलचल हुई। शांत और चुप रहकर फिर से करते हैं।" }), voice);
     }
@@ -125,8 +127,10 @@ export default function Breathing() {
             </Card>
           ) : (
             <Card tone="amber">
-              <Text style={ui.h3}>{result.quality === "too_short" ? t({ en: "Too short", te: "చాలా తక్కువ సమయం", hi: "बहुत छोटा" }) : t({ en: "Too much movement", te: "ఎక్కువ కదలిక", hi: "बहुत ज़्यादा हलचल" })}</Text>
-              <Text style={ui.body}>{t({ en: "Stay still and don’t talk, then try again.", te: "కదలకుండా, మాట్లాడకుండా మళ్ళీ చేద్దాం.", hi: "शांत रहिए, बात मत कीजिए, फिर से कोशिश कीजिए।" })}</Text>
+              <Text style={ui.h3}>{result.quality === "too_short" ? t({ en: "Too short", te: "చాలా తక్కువ సమయం", hi: "बहुत छोटा" }) : result.quality === "no_breathing" ? t({ en: "Couldn’t feel your breathing", te: "ఊపిరి తెలియలేదు", hi: "साँस महसूस नहीं हुई" }) : t({ en: "Too much movement", te: "ఎక్కువ కదలిక", hi: "बहुत ज़्यादा हलचल" })}</Text>
+              <Text style={ui.body}>{result.quality === "no_breathing"
+                ? t({ en: "Lie down and put the phone flat on the middle of your chest, screen up. Breathe normally.", te: "పడుకుని, ఫోన్‌ను ఛాతీ మధ్యలో స్క్రీన్ పైకి సమంగా పెట్టండి. మామూలుగా ఊపిరి తీసుకోండి.", hi: "लेटिए और फ़ोन छाती के बीच में, स्क्रीन ऊपर, सीधा रखिए। सामान्य साँस लीजिए।" })
+                : t({ en: "Stay still and don’t talk, then try again.", te: "కదలకుండా, మాట్లాడకుండా మళ్ళీ చేద్దాం.", hi: "शांत रहिए, बात मत कीजिए, फिर से कोशिश कीजिए।" })}</Text>
             </Card>
           )}
           {result.quality === "good" ? (
