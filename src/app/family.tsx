@@ -10,6 +10,7 @@ import { supabase } from "../lib/supabase";
 import { FAMILY_ID } from "../lib/config";
 import { DashShell, useDashSize } from "../components/DashShell";
 import { KIND_ICON, TaskManager } from "../components/TaskViews";
+import { OrdersStrip } from "../components/Orders";
 import { KIND_LABEL, clock, doneToday, taskStatus, useTasks, type Task } from "../lib/tasks";
 import { AreaChart, D, HeartArt, PulseLine, Spark } from "../components/DashArt";
 
@@ -23,7 +24,7 @@ type Tab = "dashboard" | "tasks" | "activity";
 
 const FEED_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   medicine_taken: "medkit", reminder_set: "alarm", call: "call", red_flag: "warning", scam: "shield-checkmark",
-  task_done: "checkmark-done", breathing: "leaf", chair_stand: "body", memory: "bulb", heart_rate: "heart", alarm_stopped: "alarm", task_started: "play",
+  task_done: "checkmark-done", breathing: "leaf", chair_stand: "body", memory: "bulb", heart_rate: "heart", alarm_stopped: "alarm", task_started: "play", order_request: "basket", order_approved: "checkmark-circle", order_rejected: "close-circle", cab: "car",
 };
 
 function ago(iso: string, now: number) {
@@ -340,6 +341,7 @@ export default function FamilyDashboard() {
   return (
     <DashShell fit={oneScreen} active={tab} onTab={(t) => (t === "accuracy" ? router.navigate("/results") : setTab(t))} right={headerRight}>
       {urgentBanner}
+      {tab === "dashboard" ? <OrdersStrip parent={parent} /> : null}
       {body}
     </DashShell>
   );

@@ -4,7 +4,7 @@
 import type { Correction } from "./correct.ts";
 import { COMMON_MEDICINES, type Family } from "./lexicon.ts";
 
-export const INTENTS = ["took_medicine", "set_reminder", "call_family", "red_flag", "scam_report", "other"] as const;
+export const INTENTS = ["took_medicine", "set_reminder", "call_family", "red_flag", "scam_report", "order_food", "book_cab", "other"] as const;
 export type IntentName = typeof INTENTS[number];
 
 export type Intent = {
@@ -16,6 +16,8 @@ export type Intent = {
   symptom: "chest_pain" | "breathlessness" | "dizziness" | "other" | null;
   money_sent: boolean;
   language: "te" | "hi" | "en";
+  items?: string[];           // order_food: what to order
+  destination?: string | null; // book_cab: where to go
 };
 
 export function buildPrompt(family: Family, transcript: string): string {
@@ -35,6 +37,8 @@ Intents
 - call_family: the parent asks to call or phone someone ("call cheyyi", "phone kalupu", "phone lagao").
 - red_flag: the parent reports chest pain, breathlessness, dizziness, fainting or a fall.
 - scam_report: the parent reports a suspicious call or message: someone asking for an OTP, PIN, money, KYC update, a link, or threatening with police.
+- order_food: the parent asks to order food or groceries ("order cheyyi", "tecchi pettu", "mangao", "order banana and bread").
+- book_cab: the parent asks for a cab, taxi or auto to go somewhere ("cab book cheyyi", "auto bulao", "book a cab to the hospital").
 - other: anything else.
 
 Fields
@@ -46,6 +50,8 @@ Fields
 - symptom: chest_pain, breathlessness, dizziness, other, or null.
 - money_sent: true only if the parent says money was already sent or paid.
 - language: "te", "hi" or "en", the main language spoken.
+- items: for order_food, the list of things to order in English (e.g. ["banana", "bread"]); otherwise [].
+- destination: for book_cab, where to go in English (e.g. "Hospital", "Temple"); otherwise null.
 
 Transcript:
 """
@@ -65,6 +71,8 @@ const RESPONSE_SCHEMA = {
     symptom: { type: "STRING", nullable: true },
     money_sent: { type: "BOOLEAN" },
     language: { type: "STRING", enum: ["te", "hi", "en"] },
+    items: { type: "ARRAY", items: { type: "STRING" } },
+    destination: { type: "STRING", nullable: true },
   },
   required: ["intent", "medicine", "time", "contact", "urgency", "symptom", "money_sent", "language"],
 };
@@ -175,6 +183,8 @@ export function validateIntent(raw: unknown, family: Family): Intent {
     symptom,
     money_sent: o.money_sent === true,
     language,
+    items: Array.isArray(o.items) ? (o.items as unknown[]).filter((x) => typeof x === "string" && x.trim()).map((x) => (x as string).trim()).slice(0, 10) : [],
+    destination: typeof o.destination === "string" && o.destination.trim() ? o.destination.trim() : null,
   };
 }
 
@@ -183,12 +193,20 @@ export async function extractIntent(cfg: LlmConfig, family: Family, transcript: 
   return validateIntent(raw, family);
 }
 
+function orderItems(t: string): string[] {
+  const m = t.match(/\border\s+(.+)/);
+  if (!m) return [];
+  return m[1].replace(/\b(please|from swiggy|from zomato|cheyyi|karo)\b/g, "").split(/,|\band\b|\baur\b/).map((x) => x.trim()).filter(Boolean).slice(0, 10);
+}
+
 /** Keyword fallback used only when the LLM is unavailable, so the live demo never goes silent. */
 export function rulesIntent(c: Correction, transcript: string): Intent {
   const t = transcript.toLowerCase();
   let intent: IntentName = "other";
   if (c.symptom) intent = "red_flag";
   else if (c.scam) intent = "scam_report";
+  else if (/\b(cab|taxi|auto|uber|ola|rapido)\b/.test(t)) intent = "book_cab";
+  else if (/\b(order|swiggy|zomato|mangao|tecchi|deliver)\b/.test(t)) intent = "order_food";
   else if (/(call|phone|fon|kaal|kalupu|lagao|కాల్|फ़ोन|फोन)/.test(t) && c.contact) intent = "call_family";
   else if (/(gurthu|gurtu|yaad|remind|గుర్తు|याद)/.test(t) || (c.time && c.medicine)) intent = "set_reminder";
   else if (c.medicine) intent = "took_medicine";
@@ -201,6 +219,8 @@ export function rulesIntent(c: Correction, transcript: string): Intent {
     symptom: c.symptom,
     money_sent: c.moneySent,
     language: c.language,
+    items: intent === "order_food" ? orderItems(t) : [],
+    destination: intent === "book_cab" ? (t.match(/\bto (the )?([a-z ]+?)(\.|$)/)?.[2]?.trim() ?? (/hospital|aspatri|aaspatri/.test(t) ? "hospital" : null)) : null,
   };
 }
 

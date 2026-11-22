@@ -16,7 +16,12 @@ export type Action =
   | { type: "reminder"; time: string; medicine: string | null }
   | { type: "emergency"; number: "108" }
   | { type: "dial"; number: "1930"; reason: string }
+  | { type: "order"; items: string[]; order_id?: string }
+  | { type: "cab"; destination: string; ride?: Ride; order_id?: string }
   | { type: "none" };
+
+/** Simulated ride (clearly marked) until a real cab API is connected. */
+export type Ride = { driver: string; phone: string; car: string; plate: string; otp: string; eta_min: number; rating: number; simulated: true };
 
 export type PipelineResult = {
   pipeline: Pipeline;
@@ -110,5 +115,7 @@ export function actionFor(i: Intent, family: Family): Action {
   if (i.intent === "set_reminder" && i.time) return { type: "reminder", time: i.time, medicine: i.medicine };
   if (i.intent === "red_flag") return { type: "emergency", number: "108" };
   if (i.intent === "scam_report" && i.money_sent) return { type: "dial", number: "1930", reason: "money already sent" };
+  if (i.intent === "order_food" && (i.items ?? []).length) return { type: "order", items: i.items! };
+  if (i.intent === "book_cab") return { type: "cab", destination: i.destination ?? "Destination" };
   return { type: "none" };
 }

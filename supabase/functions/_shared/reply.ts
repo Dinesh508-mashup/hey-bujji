@@ -78,6 +78,23 @@ export function buildReply(i: Intent, family: Family, replyLang?: "te" | "hi"): 
       }
       return { lang, ...base };
     }
+    case "order_food": {
+      const what = (i.items ?? []).join(", ");
+      if (!what) {
+        return hi
+          ? { lang, text: `क्या मँगाना है?`, english: "What would you like me to order?" }
+          : { lang, text: `ఏం ఆర్డర్ చేయాలి?`, english: "What would you like me to order?" };
+      }
+      return hi
+        ? { lang, text: `${what} कार्ट में डाल दिया। ${son} के हाँ कहने पर ऑर्डर होगा।`, english: `I put ${what} in the cart and sent it to ${sonName} to approve.` }
+        : { lang, text: `${what} కార్ట్‌లో పెట్టాను. ${son} ఒప్పుకున్నాక ఆర్డర్ అవుతుంది.`, english: `I put ${what} in the cart and sent it to ${sonName} to approve.` };
+    }
+    case "book_cab": {
+      const to = i.destination ?? "your destination";
+      return hi
+        ? { lang, text: `${to} के लिए कैब बुक कर रही हूँ। ड्राइवर और OTP स्क्रीन पर है।`, english: `Booking a cab to ${to}. The driver and your OTP are on the screen.` }
+        : { lang, text: `${to} కి క్యాబ్ బుక్ చేస్తున్నాను. డ్రైవర్, OTP స్క్రీన్ మీద ఉన్నాయి.`, english: `Booking a cab to ${to}. The driver and your OTP are on the screen.` };
+    }
     default:
       return hi
         ? { lang, text: `माफ़ कीजिए, फिर से बोलिए?`, english: "Sorry, could you say that again?" }
@@ -107,6 +124,12 @@ export function feedLine(i: Intent, family: Family): FeedLine | null {
         summary: i.money_sent ? `Possible scam: ${p} says money was already sent. Call 1930.` : `Possible scam call to ${p}`,
         urgency: i.money_sent ? "urgent" : "high",
       };
+    case "order_food":
+      return (i.items ?? []).length
+        ? { type: "order_request", summary: `${p} wants to order: ${(i.items ?? []).join(", ")}. Approve or reject below.`, urgency: "high" }
+        : null;
+    case "book_cab":
+      return { type: "cab", summary: `${p} booked a cab to ${i.destination ?? "somewhere"} (simulated)`, urgency: "normal" };
     default:
       return null;
   }

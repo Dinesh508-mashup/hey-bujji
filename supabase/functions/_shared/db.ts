@@ -48,3 +48,16 @@ export async function insertEvent(env: Env, row: {
   });
   if (!res.ok) console.error("insertEvent failed", res.status, await res.text());
 }
+
+/** Insert an order (food cart or cab ride) and return its id. */
+export async function insertOrder(env: Env, row: Record<string, unknown>): Promise<string | null> {
+  if (!env.url || !env.serviceKey) return null;
+  const res = await fetch(`${env.url}/rest/v1/orders`, {
+    method: "POST",
+    headers: { ...headers(env), prefer: "return=representation" },
+    body: JSON.stringify(row),
+  });
+  if (!res.ok) { console.error("insertOrder failed", res.status, await res.text()); return null; }
+  const [o] = await res.json();
+  return o?.id ?? null;
+}

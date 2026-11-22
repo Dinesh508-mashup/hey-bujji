@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FoodOrderCard, RideCard } from "../components/Orders";
 import { Animated, Easing, Linking, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -173,6 +174,8 @@ export default function Parent() {
           {result.action.type === "dial" ? (
             <BigButton style={{ marginTop: 12 }} color={C.red} label={t({ en: "Call 1930", te: "1930 కి కాల్ చేయండి", hi: "1930 पर कॉल करें" })} sub={t({ en: "Cyber fraud helpline · call now", te: "సైబర్ మోసం హెల్ప్‌లైన్", hi: "साइबर धोखाधड़ी हेल्पलाइन" })} onPress={() => Linking.openURL("tel:1930")} />
           ) : null}
+          {result.action.type === "order" ? <FoodOrderCard orderId={result.action.order_id} items={result.action.items} /> : null}
+          {result.action.type === "cab" && result.action.ride ? <RideCard ride={result.action.ride} destination={result.action.destination} /> : null}
           {result.action.type === "emergency" && !emergency ? (
             <BigButton style={{ marginTop: 12 }} color={C.red} label={t({ en: "Call 108", te: "108 కి కాల్", hi: "108 पर कॉल" })} onPress={() => setEmergency(true)} />
           ) : null}

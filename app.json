@@ -39,7 +39,13 @@
       ],
       "expo-notifications",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Hey Bujji uses your location as the pickup point when you ask for a cab."
+        }
+      ]
     ],
     "scheme": "heybujji"
   }

@@ -6,8 +6,14 @@
 // the app should take. Unless dry_run, posts a line to the family feed.
 import { env } from "../_shared/env.ts";
 import { CORS, errorJson, json } from "../_shared/http.ts";
-import { insertEvent, loadFamily } from "../_shared/db.ts";
-import { type Pipeline, runPipeline } from "../_shared/pipeline.ts";
+import { insertEvent, insertOrder, loadFamily } from "../_shared/db.ts";
+import { type Pipeline, type Ride, runPipeline } from "../_shared/pipeline.ts";
+
+const DRIVERS = [["Suresh Kumar", "Maruti Swift Dzire", "AP 16 CK 4521"], ["Ramesh Babu", "Toyota Etios", "AP 39 TB 7788"], ["Venkat Rao", "Hyundai Aura", "AP 16 DE 1290"]];
+function mockRide(): Ride {
+  const [driver, car, plate] = DRIVERS[Math.floor(Math.random() * DRIVERS.length)];
+  return { driver, car, plate, phone: "+910000000000", otp: String(1000 + Math.floor(Math.random() * 9000)), eta_min: 3 + Math.floor(Math.random() * 6), rating: 4.7, simulated: true };
+}
 
 const pick = (v: unknown): Pipeline => (v === "baseline" || v === "indic_raw" ? v : "bujji");
 
@@ -55,6 +61,21 @@ Deno.serve(async (req) => {
 
     const family = await loadFamily(E.db, familyId);
     const result = await runPipeline({ pipeline, family, stt: E.stt, llm: E.llm, audio, filename, text, strict, reference, replyLang });
+
+    // Orders: food goes to Ravi for approval; cabs are simulated with a mock driver and OTP.
+    if (!dryRun && result.action.type === "order") {
+      result.action.order_id = (await insertOrder(E.db, {
+        family_id: familyId, kind: "food", status: "pending", items: result.action.items, said: result.transcript,
+        details: { source: "demo_cart", note: "Demo cart: no real order is placed until a Swiggy/Zomato account is connected" },
+      })) ?? undefined;
+    }
+    if (!dryRun && result.action.type === "cab") {
+      const ride = mockRide();
+      result.action.ride = ride;
+      result.action.order_id = (await insertOrder(E.db, {
+        family_id: familyId, kind: "cab", status: "assigned", destination: result.action.destination, said: result.transcript, details: ride,
+      })) ?? undefined;
+    }
 
     if (!dryRun && result.feed) {
       await insertEvent(E.db, {
