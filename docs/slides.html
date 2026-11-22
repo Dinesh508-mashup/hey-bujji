@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Hey Bujji — shortlist deck</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif; color: #1A1A1A; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide { width: 1280px; height: 720px; position: relative; overflow: hidden; background: #F6F3EF; padding: 64px 72px; page-break-after: always; display: flex; flex-direction: column; }
+  .slide:last-child { page-break-after: auto; }
+  .kicker { font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #F26A1B; display: flex; align-items: center; gap: 10px; }
+  .kicker::before { content: ""; width: 14px; height: 14px; border-radius: 4px; background: #F26A1B; display: inline-block; }
+  h1 { font-size: 54px; line-height: 1.05; font-weight: 700; letter-spacing: -2px; margin-top: 14px; }
+  h1 .soft { color: #B9AFA5; }
+  .lead { font-size: 22px; line-height: 1.45; color: #5C5751; margin-top: 16px; max-width: 760px; }
+  .grid { display: grid; gap: 18px; margin-top: 34px; }
+  .card { background: #fff; border-radius: 26px; padding: 24px 26px; box-shadow: 0 10px 30px rgba(58,42,26,0.06); }
+  .card.dark { background: #161618; color: #fff; }
+  .card.orange { background: linear-gradient(135deg,#FF8A3D,#F2621A 60%,#C8470C); color: #fff; }
+  .card h3 { font-size: 21px; font-weight: 700; letter-spacing: -0.4px; }
+  .card p, .card li { font-size: 16px; line-height: 1.5; color: #6B655E; margin-top: 8px; }
+  .card.dark p, .card.dark li, .card.orange p, .card.orange li { color: rgba(255,255,255,0.82); }
+  .card ul { padding-left: 18px; }
+  .big { font-size: 60px; font-weight: 300; letter-spacing: -2.5px; line-height: 1; }
+  .icon { width: 54px; height: 54px; }
+  .foot { position: absolute; bottom: 28px; left: 72px; right: 72px; display: flex; justify-content: space-between; font-size: 13px; color: #A39A90; }
+  .arcs { position: absolute; right: -240px; top: -240px; width: 760px; height: 760px; border-radius: 50%; border: 2px solid rgba(242,106,27,0.18); }
+  .arcs.two { right: -320px; top: -120px; width: 620px; height: 620px; }
+  .flow { display: flex; align-items: stretch; gap: 12px; margin-top: 34px; }
+  .step { flex: 1; background: #fff; border-radius: 22px; padding: 18px; box-shadow: 0 10px 30px rgba(58,42,26,0.06); position: relative; }
+  .step .n { width: 30px; height: 30px; border-radius: 15px; background: #F26A1B; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .step h4 { font-size: 17px; margin-top: 12px; letter-spacing: -0.3px; }
+  .step p { font-size: 14px; color: #6B655E; margin-top: 6px; line-height: 1.45; }
+  .arrow { align-self: center; color: #F26A1B; font-size: 26px; font-weight: 700; }
+  .pill { display: inline-block; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid #E8E1D8; background: #fff; margin: 4px 6px 0 0; color: #1A1A1A; }
+  .tag { white-space: nowrap; font-size: 12px; font-weight: 700; color: #fff; background: #F26A1B; border-radius: 6px; padding: 3px 8px; }
+</style></head><body>
+
+<!-- 1. Title -->
+<section class="slide" style="justify-content:center;">
+  <div class="arcs"></div><div class="arcs two"></div>
+  <div style="display:flex; align-items:center; gap:60px;">
+    <div style="flex:1;">
+      <div class="kicker">Hey Bujji · Shortlist</div>
+      <h1 style="font-size:76px;">Parents just talk.<br><span style="color:#F26A1B;">Bujji takes care.</span></h1>
+      <p class="lead">A voice assistant for elderly parents in Telugu, Hindi and English, with a live dashboard that keeps their children in the loop and in control.</p>
+      <div style="margin-top:26px;"><span class="pill">Voice-first</span><span class="pill">Indian languages</span><span class="pill">Family dashboard</span><span class="pill">No extra hardware</span></div>
+    </div>
+    <svg width="330" height="330" viewBox="0 0 200 200">
+      <defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB47A"/><stop offset="1" stop-color="#F2621A"/></linearGradient>
+      <radialGradient id="p" cx="0.45" cy="0.4" r="0.7"><stop offset="0" stop-color="#3A3A44"/><stop offset="1" stop-color="#0B0B10"/></radialGradient></defs>
+      <ellipse cx="100" cy="188" rx="52" ry="7" fill="#000" opacity="0.08"/>
+      <circle cx="52" cy="38" r="11" fill="#FF9A55"/><circle cx="148" cy="38" r="11" fill="#FF9A55"/>
+      <path d="M40 48 H160 Q186 48 186 76 V122 Q186 150 160 150 H112 L98 172 L90 150 H40 Q14 150 14 122 V76 Q14 48 40 48 Z" fill="url(#b)"/>
+      <path d="M42 58 H128 Q140 58 136 66 Q90 72 34 74 Q30 60 42 58 Z" fill="#fff" opacity="0.35"/>
+      <ellipse cx="70" cy="92" rx="27" ry="27" fill="#fff"/><ellipse cx="130" cy="92" rx="27" ry="27" fill="#fff"/>
+      <circle cx="70" cy="93" r="17" fill="url(#p)"/><circle cx="130" cy="93" r="17" fill="url(#p)"/>
+      <circle cx="64" cy="86" r="6" fill="#fff"/><circle cx="124" cy="86" r="6" fill="#fff"/>
+      <ellipse cx="42" cy="124" rx="11" ry="6" fill="#FFE1CC" opacity="0.8"/><ellipse cx="158" cy="124" rx="11" ry="6" fill="#FFE1CC" opacity="0.8"/>
+      <path d="M88 128 Q100 138 112 128" stroke="#5A2306" stroke-width="4" stroke-linecap="round" fill="none"/>
+    </svg>
+  </div>
+  <div class="foot"><span>github.com/Dinesh508-mashup/hey-bujji</span><span>Wellness &amp; family-alert assistant · not a medical device</span></div>
+</section>
+
+<!-- 2. Problem & who -->
+<section class="slide">
+  <div class="kicker">The problem</div>
+  <h1>Our parents are alone at home.<br><span class="soft">Their phones weren't built for them.</span></h1>
+  <div class="grid" style="grid-template-columns: 1.1fr 1fr 1fr 1fr;">
+    <div class="card orange"><div class="big">~150M</div><p style="margin-top:14px;">Indians are over 60. Millions live alone while their children work in other cities or abroad.</p></div>
+    <div class="card"><img class="icon" src="../assets/checks/pill.png"><h3 style="margin-top:12px;">Missed medicines</h3><p>Small buttons and English menus. Reminders get ignored; nobody knows.</p></div>
+    <div class="card"><img class="icon" src="../assets/checks/shield.png"><h3 style="margin-top:12px;">Scam calls</h3><p>Fake bank / KYC / "digital arrest" calls target parents for OTPs and money.</p></div>
+    <div class="card"><img class="icon" src="../assets/checks/heart.png"><h3 style="margin-top:12px;">Hidden health signs</h3><p>Children hear about problems only after something goes wrong.</p></div>
+  </div>
+  <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; margin-top:18px;">
+    <div class="card dark"><h3>Users · parents 60+</h3><p>They just talk, in Telugu, Hindi or English.</p></div>
+    <div class="card dark"><h3>Payers · children 25–45</h3><p>Working away from home or abroad; they pay for peace of mind.</p></div>
+    <div class="card dark"><h3>Later · B2B</h3><p>Insurers, hospitals, senior living, home-care companies.</p></div>
+  </div>
+</section>
+
+<!-- 3. What we built -->
+<section class="slide">
+  <div class="kicker">What we built</div>
+  <h1>Two apps, one family. <span class="soft">Working today.</span></h1>
+  <div class="grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="card orange">
+      <h3>Parent app · "Amma" (iPhone)</h3>
+      <ul>
+        <li><b>Talk:</b> "I took my BP tablet", "Call my son", "Chest pain" → done in ~2 s</li>
+        <li><b>Today's plan:</b> loud spoken alarm, confirm by voice, walk step counter</li>
+        <li><b>Health checks</b> on the phone's sensors: breathing, chair stand, memory, heart rate</li>
+        <li><b>Scam check:</b> paste or screenshot a message → verdict + 1930</li>
+        <li><b>Food &amp; cab</b> by voice, with the son's approval; OTP read aloud</li>
+      </ul>
+    </div>
+    <div class="card dark">
+      <h3>Family dashboard · "Ravi" (web)</h3>
+      <ul>
+        <li><b>Live feed</b> of what Amma did, with red alerts for emergencies and scams</li>
+        <li><b>Care plan:</b> set tasks that ring on her phone; see voice confirmations</li>
+        <li><b>Approve</b> food carts; track rides and completions</li>
+        <li><b>Body health tracking</b> + <b>Care tips</b>: results → advice → "Assign to Amma"</li>
+        <li><b>Bujji score:</b> measured accuracy vs a standard speech model</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px; display:flex; align-items:center; gap:14px;">
+    <span class="tag">Honest status</span><p style="margin:0;">Food orders and cab rides are demo flows (no real order/ride). Heart-rate and accuracy numbers still need real-person testing. Wellness, not diagnosis.</p>
+  </div>
+</section>
+
+<!-- 4. How it works -->
+<section class="slide">
+  <div class="kicker">How it works</div>
+  <h1>Built to understand <span style="color:#F26A1B;">Indian parents.</span></h1>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><h4>Amma speaks</h4><p>"Raatri 8 ki sugar tablet gurthu cheyyi"</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">2</div><h4>Indian speech AI</h4><p>Sarvam turns Telugu / Hindi / mixed speech into text</p></div>
+    <div class="arrow">→</div>
+    <div class="step" style="border:2px solid #F26A1B;"><div class="n">3</div><h4>Our correction step</h4><p>Fixes medicine names, nicknames (abbayi → Ravi), times (raatri 8 → 20:00)</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">4</div><h4>AI understanding</h4><p>OpenAI picks the action; safety rules always win (108, 1930)</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">5</div><h4>Action + family</h4><p>Reminder, call, alert or order; live on the dashboard</p></div>
+  </div>
+  <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; margin-top:22px;">
+    <div class="card"><h3>Phone = the device</h3><p>Motion sensor, microphone, pedometer and GPS power the checks. No wearable to buy.</p></div>
+    <div class="card"><h3>Private by design</h3><p>API keys stay on the server. Health audio is analysed on the phone and never uploaded.</p></div>
+    <div class="card"><h3>Stack</h3><p>Expo / React Native · Supabase (Postgres, Realtime, Edge Functions) · Sarvam · OpenAI. 84 automated tests.</p></div>
+  </div>
+</section>
+
+<!-- 5. What's next -->
+<section class="slide">
+  <div class="arcs"></div>
+  <div class="kicker">What's next</div>
+  <h1>From demo to <span style="color:#F26A1B;">100 families.</span></h1>
+  <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+    <div class="card"><span class="tag">Next 30 days</span><ul style="margin-top:10px;"><li>Run the accuracy test with real elderly voices</li><li>Fluent Telugu replies</li><li>Camera-fingertip heart rate</li><li>Login + locked-down server</li></ul></div>
+    <div class="card"><span class="tag">Next 90 days</span><ul style="margin-top:10px;"><li>Real orders via Swiggy's MCP, real cab booking</li><li>Pilot with 100 families (AP &amp; Telangana)</li><li>Android app</li></ul></div>
+    <div class="card dark"><h3>Business model</h3><ul><li><b>Family plan</b> ≈ ₹299 / month, paid by the children</li><li><b>B2B:</b> insurers &amp; hospitals per parent monitored</li><li><b>Commerce:</b> small fee on approved orders</li></ul></div>
+  </div>
+  <div class="card orange" style="margin-top:20px;">
+    <h3 style="font-size:24px;">"Did she take her medicine? Is she safe? Is she being cheated?"</h3>
+    <p style="font-size:18px;">Hey Bujji answers all three, and Amma only has to talk.</p>
+  </div>
+  <div class="foot"><span>Hey Bujji</span><span>github.com/Dinesh508-mashup/hey-bujji</span></div>
+</section>
+</body></html>
