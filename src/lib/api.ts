@@ -1,7 +1,8 @@
 // Calls to the Supabase edge functions. No API keys here: only the public anon key.
 import { Platform } from "react-native";
 import { File } from "expo-file-system";
-import { FAMILY_ID, FUNCTIONS_URL, SUPABASE_ANON_KEY } from "./config";
+import { FAMILY_ID, FUNCTIONS_URL, MOCK, SUPABASE_ANON_KEY } from "./config";
+import { mockFunction } from "./mockBackend";
 import { supabase } from "./supabase";
 import { currentLang } from "./language";
 
@@ -54,6 +55,7 @@ export const authHeaders = { authorization: `Bearer ${SUPABASE_ANON_KEY}`, apike
 type Part = { name: string; value: string } | { name: string; uri: string; filename: string; type: string };
 
 async function post<T>(fn: string, body: Part[] | object): Promise<T> {
+  if (MOCK) return (await mockFunction(fn, body as never)) as T;
   const init: { method: string; headers: Record<string, string>; body: BodyInit } = Array.isArray(body)
     ? await multipart(body as Part[])
     : { method: "POST", headers: { ...authHeaders, "content-type": "application/json" }, body: JSON.stringify(body) };

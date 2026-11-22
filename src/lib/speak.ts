@@ -3,7 +3,7 @@
 import * as Speech from "expo-speech";
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
 import { authHeaders, ttsUrl } from "./api";
-import { isConfigured } from "./config";
+import { isConfigured, MOCK } from "./config";
 
 const voiceCache: Record<string, string | null> = {};
 let current: AudioPlayer | null = null;
@@ -35,7 +35,7 @@ export async function speak(text: string, lang: "te-IN" | "hi-IN" | "en-IN" = "t
   const voice = await deviceVoice(lang);
   const timeout = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-  if (voice || !isConfigured) {
+  if (voice || !isConfigured || MOCK) {
     await Promise.race([
       new Promise<void>((resolve) =>
         Speech.speak(text, { language: lang, voice: voice ?? undefined, rate: 0.9, volume: 1, onDone: resolve, onStopped: resolve, onError: () => resolve() })),
